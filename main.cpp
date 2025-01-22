@@ -25,9 +25,20 @@ public:
     const std::vector<std::string> menu_entries = {
       "New Game", "Load Game", "Exit"};
     int selection = 0;
-    ftxui::MenuOption option;
-    option.on_enter = screen.ExitLoopClosure ();
-    auto menu = Menu (&menu_entries, &selection, option);
+    auto close = screen.ExitLoopClosure ();
+    auto newButton = Button ("New Game", [&] {
+      selection = 0;
+      close ();
+    });
+    auto loadButton = Button ("Load Game", [&] {
+      selection = 1;
+      close ();
+    });
+    auto exitButton = Button ("Exit", [&] {
+      selection = 2;
+      close ();
+    });
+    auto menu = Container::Vertical ({newButton, loadButton, exitButton});
     auto layout = Container::Vertical (
       {Renderer ([] { return filler (); }), menu,
        Renderer ([] { return filler (); })});
@@ -40,14 +51,43 @@ public:
     using namespace ftxui;
     bool goBack = false;
     bool selection = true;
+    bool readyToLoad = false;
     int selection2 = 0;
     ftxui::MenuOption option;
     auto close = screen.ExitLoopClosure ();
     std::vector<std::string> FileAndDirs;
     std::filesystem::path path = std::filesystem::current_path ();
     std::string visual = path.string ();
+
+    auto openButton = Maybe (
+      Button (
+        "Open",
+        [&] {
+          // change
+          auto selected = FileAndDirs[selection2];
+          if (selected == "..") {
+            path = path.parent_path ();
+          } else {
+            if (!std::filesystem::is_directory (path / selected)) {
+              visual = (path / selected).string ();
+            }
+          }
+          visual = path.string ();
+          // goBack = true;
+          // selection = false;
+          close ();
+        }),
+      &readyToLoad);
+
+    auto backButton = Button ("Back", [&] {
+      goBack = true;
+      selection = false;
+      close ();
+    });
+
     option.on_enter = [&] {
       auto selected = FileAndDirs[selection2];
+      readyToLoad = false;
       if (selected == "..") {
         path = path.parent_path ();
       } else {
@@ -55,32 +95,16 @@ public:
           path /= selected;
         } else {
           visual = (path / selected).string ();
+          readyToLoad = true;
         }
       }
       close ();
     };
 
-    auto openButton = Button ("Open", [&] {
-      // change
+    option.on_change = [&] {
       auto selected = FileAndDirs[selection2];
-      if (selected == "..") {
-        path = path.parent_path ();
-      } else {
-        if (std::filesystem::is_directory (path / selected))
-          path /= selected;
-        else
-          visual = (path / selected).string ();
-      }
-      visual = path.string ();
-      // goBack = true;
-      // selection = false;
-      close ();
-    });
-    auto backButton = Button ("Back", [&] {
-      goBack = true;
-      selection = false;
-      close ();
-    });
+      readyToLoad = !std::filesystem::is_directory (path / selected);
+    };
 
     auto dirMenu = Menu (&FileAndDirs, &selection2, option);
     auto layout = Container::Horizontal (
@@ -99,7 +123,7 @@ public:
       }
       screen.Loop (Renderer (layout, [&] {
         return mainGrid (vbox ({
-          text (visual) | border,
+          text (visual) | border, filler (),
           hbox (
             {frame ({dirMenu->Render ()}), filler (),
              vbox ({filler (), openButton->Render (), backButton->Render ()})})
