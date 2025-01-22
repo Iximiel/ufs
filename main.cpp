@@ -14,8 +14,7 @@ class UnderFallingSkiesTracker {
     return vbox (
       {hbox (
          {filler (), text ("Under Falling Skies campaign tracker"), filler ()}),
-       separator (), filler (), body, filler (), separator (),
-       text ("Version 0.1")});
+       separator (), body | flex, separator (), text ("Version 0.1")});
   }
 
 public:
@@ -90,11 +89,13 @@ public:
       readyToLoad = false;
       if (selected == "..") {
         path = path.parent_path ();
+        visual = path.string ();
       } else {
         if (std::filesystem::is_directory (path / selected)) {
           path /= selected;
+          visual = path.string ();
         } else {
-          visual = (path / selected).string ();
+          ;
           readyToLoad = true;
         }
       }
@@ -108,7 +109,7 @@ public:
 
     auto dirMenu = Menu (&FileAndDirs, &selection2, option);
     auto layout = Container::Horizontal (
-      {dirMenu,
+      {dirMenu | flex,
        Container::Vertical (
          {Renderer ([] { return filler (); }), openButton, backButton})});
     while (selection) {
@@ -123,10 +124,12 @@ public:
       }
       screen.Loop (Renderer (layout, [&] {
         return mainGrid (vbox ({
-          text (visual) | border, filler (),
+          window (text ("path"), text (visual)),
           hbox (
-            {frame ({dirMenu->Render ()}), filler (),
-             vbox ({filler (), openButton->Render (), backButton->Render ()})})
+            {frame ({dirMenu->Render ()}) | flex,
+             vbox (
+               {filler (), openButton->Render (), backButton->Render ()})}) |
+            flex
           // layout->Render ()
         }));
       }));
