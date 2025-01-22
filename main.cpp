@@ -51,8 +51,11 @@ public:
       if (selected == "..") {
         path = path.parent_path ();
       } else {
-        if (std::filesystem::is_directory (path / selected))
+        if (std::filesystem::is_directory (path / selected)) {
           path /= selected;
+        } else {
+          visual = (path / selected).string ();
+        }
       }
       close ();
     };
