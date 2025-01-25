@@ -15,7 +15,7 @@ include(FetchContent)
 FetchContent_Declare(
   Djson
   GIT_REPOSITORY https://github.com/Iximiel/djson.git
-  GIT_TAG v0.0.1-alpha)
+  GIT_TAG v0.0.2-alpha)
 FetchContent_MakeAvailable(Djson)
 
 FetchContent_Declare(
@@ -24,7 +24,7 @@ FetchContent_Declare(
   GIT_TAG v5.0.0)
 FetchContent_MakeAvailable(ftxui)
 
-add_executable(UFSCampaignTracker main.cpp)
+add_executable(UFSCampaignTracker main.cpp utils.cpp campaign.cpp save.cpp)
 target_link_libraries(
   UFSCampaignTracker
   PRIVATE Djson::Djson

@@ -5,8 +5,11 @@
 
 #include <filesystem>
 #include <iostream>
+#include <random>
 #include <string>
 #include <vector>
+
+#include "campaign.hpp"
 
 class UnderFallingSkiesTracker {
   ftxui::Element mainGrid (ftxui::Element body) {
@@ -16,25 +19,28 @@ class UnderFallingSkiesTracker {
          {filler (), text ("Under Falling Skies campaign tracker"), filler ()}),
        separator (), body | flex, separator (), text ("Version 0.1")});
   }
+  const ufsct::Campaign campaign{"campaign.data"};
+  std::mt19937 rng{std::random_device{}()};
 
 public:
-  int mainMenu (ftxui::ScreenInteractive &screen) {
+  enum class navigation { ufsMain, ufsNew, ufsLoad, ufsExit };
+  navigation mainMenu (ftxui::ScreenInteractive &screen) {
     using namespace ftxui;
-
+    using enum navigation;
     const std::vector<std::string> menu_entries = {
       "New Game", "Load Game", "Exit"};
-    int selection = 0;
+    navigation selection = ufsMain;
     auto close = screen.ExitLoopClosure ();
     auto newButton = Button ("New Game", [&] {
-      selection = 0;
+      selection = ufsNew;
       close ();
     });
     auto loadButton = Button ("Load Game", [&] {
-      selection = 1;
+      selection = ufsLoad;
       close ();
     });
     auto exitButton = Button ("Exit", [&] {
-      selection = 2;
+      selection = ufsExit;
       close ();
     });
     auto menu = Container::Vertical ({newButton, loadButton, exitButton});
@@ -46,7 +52,60 @@ public:
     }));
     return selection;
   }
-  int loadMenu (ftxui::ScreenInteractive &screen) {
+
+  navigation newCampaignMenu (ftxui::ScreenInteractive &screen) {
+    using namespace ftxui;
+
+    bool goBack = false;
+    auto close = screen.ExitLoopClosure ();
+    auto backButton = Button ("Back", [&] {
+      goBack = true;
+      close ();
+    });
+
+    int chosenID = -1;
+    std::array<size_t, 4> charID = {0, 1, 2, 3};
+    std::shuffle (charID.begin (), charID.end (), rng);
+    std::array<size_t, 4> sceneID = {0, 1, 2, 3};
+    std::shuffle (sceneID.begin (), sceneID.end (), rng);
+    std::array<size_t, 4> citiesID = {0, 1, 2, 3};
+    std::shuffle (citiesID.begin (), citiesID.end (), rng);
+    Components setbttn (2);
+    Elements battleChoiche;
+    for (int i = 0; i < 2; i++) {
+      setbttn[i] = Button ("Set " + std::to_string (i + 1), [&] {
+        // goBack = true;
+        chosenID = i;
+        close ();
+      });
+      battleChoiche.push_back (vbox (
+        vbox (
+          text (campaign[0].characters[charID[i]]),
+          text (campaign[0].scenarios[sceneID[i]]),
+          text (campaign[0].cities[citiesID[i]])) |
+          border,
+        setbttn[i]->Render ()));
+    }
+    Element document = flexbox (
+      battleChoiche, ftxui::FlexboxConfig ()
+                       .Set (FlexboxConfig::Direction::Row)
+                       .Set (FlexboxConfig::JustifyContent::Center));
+    auto layout = Container::Horizontal (
+      {Renderer ([&] { return document; }),
+       Container::Vertical (
+         {Renderer ([&] { return filler (); }), backButton})});
+
+    screen.Loop (Renderer (layout, [&] {
+      return mainGrid (hbox ({filler (), layout->Render (), filler ()}));
+    }));
+
+    if (goBack) {
+      return navigation::ufsMain;
+    }
+    return navigation::ufsMain;
+  }
+
+  navigation loadMenu (ftxui::ScreenInteractive &screen) {
     using namespace ftxui;
     bool goBack = false;
     bool selection = true;
@@ -95,7 +154,6 @@ public:
           path /= selected;
           visual = path.string ();
         } else {
-          ;
           readyToLoad = true;
         }
       }
@@ -136,9 +194,9 @@ public:
     }
 
     if (goBack) {
-      return 0;
+      return navigation::ufsMain;
     }
-    return 1;
+    return navigation::ufsLoad;
   }
 };
 
@@ -146,23 +204,30 @@ int main (int, char **) {
   using namespace ftxui;
   auto screen = ScreenInteractive::Fullscreen ();
   UnderFallingSkiesTracker program;
-  int selection = 0;
+  UnderFallingSkiesTracker::navigation selection =
+    UnderFallingSkiesTracker::navigation::ufsMain;
+
   while (true) {
     switch (selection) {
-    case 0:
+      using enum UnderFallingSkiesTracker::navigation;
+    case ufsMain:
       selection = program.mainMenu (screen);
       break;
-    case 1:
+    case ufsNew:
+      selection = program.newCampaignMenu (screen);
+      break;
+    case ufsLoad:
       selection = program.loadMenu (screen);
       break;
+    case ufsExit:
+      [[fallthrough]];
     default:
       break;
     }
-    if (selection == 2) {
+    if (selection == UnderFallingSkiesTracker::navigation::ufsExit) {
       break;
     }
   }
-
   return EXIT_SUCCESS;
 }
 
