@@ -6,6 +6,30 @@
 #include <fstream>
 
 namespace ufsct {
+  Save::Save () = default;
+  Save::~Save () = default;
+  Save &Save::operator= (const Save &) = default;
+  Save &Save::operator= (Save &&) = default;
+
+  template <typename T>
+  T loadChapter (djson::Object chapter) {
+    T toret;
+    toret.cityID = chapter.get<djson::Number> ("cityID");
+    toret.charID = chapter.get<djson::Number> ("charID");
+    auto tries = chapter.get<djson::Array> ("tries");
+    toret.tries[0] = tries.get<djson::Number> (0);
+    toret.tries[1] = tries.get<djson::Number> (1);
+    if constexpr (std::is_same_v<T, chapter2>) {
+      toret.elitecharID = chapter.get<djson::Number> ("elitecharID1");
+    }
+    if constexpr (std::is_same_v<T, chapter3>) {
+      toret.elitecharID = chapter.get<djson::Number> ("elitecharID1");
+      toret.elitecharID2 = chapter.get<djson::Number> ("elitecharID2");
+    }
+    return toret;
+  }
+
+  Save::Save (std::string_view cname) : name (cname) {}
 
   bool Save::load (std::string_view filename) {
     std::ifstream file (filename.data ());
@@ -13,75 +37,103 @@ namespace ufsct {
     if (!saveRead) {
       return false;
     }
-    auto save = *saveRead;
+    name = saveRead->get<djson::String> ("name");
 
-    auto chars = save.get<djson::Array> ("characters");
-    for (int i = 0; i < characters.size (); i++) {
-      characters[i] = chars.get<djson::String> (i);
+    auto history = saveRead->get<djson::Object> ("history");
+    for (const auto &key : history.Keys ()) {
+      if (key == "chapter1") {
+        auto tmp = history.get<djson::Array> ("chapter1");
+        firstChapter[0] = loadChapter<chapter1> (tmp.get<djson::Object> (0));
+        if (tmp.size () > 1) {
+          firstChapter[1] = loadChapter<chapter1> (tmp.get<djson::Object> (1));
+        }
+      } else if (key == "chapter2") {
+        auto tmp = history.get<djson::Array> ("chapter2");
+        secondChapter[0] = loadChapter<chapter2> (tmp.get<djson::Object> (0));
+        if (tmp.size () > 1) {
+          secondChapter[1] = loadChapter<chapter2> (tmp.get<djson::Object> (1));
+        }
+      } else if (key == "chapter3") {
+        auto tmp = history.get<djson::Array> ("chapter3");
+        thirdChapter[0] = loadChapter<chapter3> (tmp.get<djson::Object> (0));
+        if (tmp.size () > 1) {
+          thirdChapter[1] = loadChapter<chapter3> (tmp.get<djson::Object> (1));
+        }
+      } /*else if (key == "chapter4") {
+        auto tmp = history.get<djson::Array> ("chapter4");
+        fourthChapter[0] = loadChapter<chapter4>  (tmp.get<djson::Object> (0));
+        if (tmp.size () > 1) {
+          fourthChapter[1] = loadChapter<chapte4>  (tmp.get<djson::Object>
+      (1));
+        }
+      }*/
     }
-
-    auto citiesLoad = save.get<djson::Array> ("cities");
-    for (int i = 0; i < citiesLoad.size (); i++) {
-      cities[i] = citiesLoad.get<djson::String> (i);
-    }
-    lastBattle = save.get<djson::Number> ("lastBattle");
-
-    auto destroyedCitiesLoad = save.get<djson::Array> ("destroyedCities");
-    for (int i = 0; i < destroyedCitiesLoad.size (); i++) {
-      destroyedCities[i] = destroyedCitiesLoad.get<djson::Boolean> (i);
-    }
-    auto chapter1 = save.get<djson::Object> ("chapter1");
-
-    auto bt1 = chapter1.get<djson::Object> ("battle1");
-    firstChapter[0].cityID = bt1.get<djson::Number> ("cityID");
-    firstChapter[0].charID = bt1.get<djson::Number> ("charID");
-    firstChapter[0].tries[0] =
-      bt1.get<djson::Array> ("tries").get<djson::Number> (0);
-    firstChapter[0].tries[1] =
-      bt1.get<djson::Array> ("tries").get<djson::Number> (1);
     return true;
   }
 
+  djson::Object saveChapter (chapter1 c) {
+    djson::Object toret;
+    toret["cityID"] = djson::Number{c.cityID};
+    toret["charID"] = djson::Number{c.charID};
+    toret["tries"] =
+      djson::Array{{djson::Number{c.tries[0]}, djson::Number{c.tries[1]}}};
+    return toret;
+  }
+  djson::Object saveChapter (chapter2 c) {
+    auto toret = saveChapter (chapter1 (c));
+    toret["elitecharID1"] = djson::Number{c.elitecharID};
+    return toret;
+  }
+
+  djson::Object saveChapter (chapter3 c) {
+    auto toret = saveChapter (chapter2 (c));
+    toret["elitecharID2"] = djson::Number{c.elitecharID};
+    return toret;
+  }
+
   bool Save::save (std::string_view filename) {
-    djson::Object data;
-    // save["baseDifficulty"] = djson::Number (baseDifficulty);
-    // save["currentPlay"] = djson::Number (currentPlay);
-    data["characters"] = djson::Array{};
-    for (const auto &c : characters) {
-      data.get<djson::Array> ("characters").emplace_back (c);
-    }
-    data["cities"] = djson::Array{};
-    for (const auto &c : cities) {
-      data.get<djson::Array> ("cities").emplace_back (c);
-    }
-
     djson::Object history;
-    history["lastBattle"] = djson::Number (lastBattle);
-    history["destroyedCities"] = djson::Array{};
-    for (const auto &c : destroyedCities) {
-      history.get<djson::Array> ("destroyedCities").emplace_back (c);
+
+    if (firstChapter[0].charID != -1) {
+      djson::Array ch1;
+      ch1.push_back (saveChapter (firstChapter[0]));
+      if (firstChapter[1].charID != -1) {
+        ch1.push_back (saveChapter (firstChapter[1]));
+      }
+      history["chapter1"] = ch1;
     }
-    history["chapter1"] = djson::Object{};
 
-    djson::Object bt1;
-    bt1["cityID"] = djson::Number (firstChapter[0].cityID);
-    bt1["charID"] = djson::Number (firstChapter[0].charID);
-    bt1["tries"] = djson::Array (
-      {djson::Number (firstChapter[0].tries[0]),
-       djson::Number (firstChapter[0].tries[1])});
-    history.get<djson::Object> ("chapter1")["battle1"] = bt1;
+    if (secondChapter[0].charID != -1) {
+      djson::Array ch2;
+      ch2.push_back (saveChapter (secondChapter[0]));
+      if (secondChapter[1].charID != -1) {
+        ch2.push_back (saveChapter (secondChapter[1]));
+      }
+      history["chapter2"] = ch2;
+    }
 
-    // history.get<djson::Object>("chapter1")["battle2"] = djson::Object{};
-
-    // history["chapter2"] = djson::Object{};
-    // history["chapter3"] = djson::Object{};
-    // history["chapter4"] = djson::Object{};
-
+    if (thirdChapter[0].charID != -1) {
+      djson::Array ch3;
+      ch3.push_back (saveChapter (thirdChapter[0]));
+      if (thirdChapter[1].charID != -1) {
+        ch3.push_back (saveChapter (thirdChapter[1]));
+      }
+      history["chapter3"] = ch3;
+    }
+    /*
+        if (fourthChapter[0].charID != -1) {
+          djson::Array ch4;
+          ch4.push_back (saveChapter (fourthChapter[0]));
+          if (fourthChapter[1].charID != -1) {
+            ch4.push_back (saveChapter (fourthChapter[1]));
+          }
+          history["chapter4"] = ch4;
+        }
+    */
     djson::Object save;
-    save["data"] = data;
+    save["name"] = djson::String{name};
     save["history"] = history;
     std::ofstream file (filename.data ());
-
     djson::write (file, save);
     return true;
   }
