@@ -19,6 +19,41 @@ namespace ufsct {
   Save &Save::operator= (Save &&) = default;
   Save::Save (std::string_view cname) : Save () { name = cname; }
 
+  std::string Save::getCampaignName () const { return name; }
+
+  chapter3 Save::getChapter (int chapter, int battle) {
+    switch (chapter) {
+    case 0:
+      return chapter3 (firstChapter.at (battle));
+      break;
+    case 1:
+      return chapter3 (secondChapter.at (battle));
+      break;
+    case 2:
+      return thirdChapter.at (battle);
+      break;
+    default:
+      break;
+    }
+    return chapter3 ();
+  }
+
+  void Save::setTry (int chapter, int battle, int tryNumber, int difficulty) {
+    switch (chapter) {
+    case 0:
+      firstChapter.at (battle).tries[tryNumber] = difficulty;
+      break;
+    case 1:
+      secondChapter.at (battle).tries[tryNumber] = difficulty;
+      break;
+    case 2:
+      thirdChapter.at (battle).tries[tryNumber] = difficulty;
+      break;
+    default:
+      break;
+    }
+  }
+
   chapter1 &Save::getFirstChapter (int const battle) {
     return firstChapter.at (battle);
   }
@@ -298,21 +333,21 @@ namespace ufsct {
     case 0:
       [[fallthrough]];
     case 1:
-      return firstChapter[scenario].tries[0] != chapter1::NotFought ||
+      return firstChapter[scenario].tries[0] != chapter1::NotFought &&
              (firstChapter[scenario].tries[0] == chapter1::Fail &&
               firstChapter[scenario].tries[1] != chapter1::NotFought);
       break;
     case 2:
       [[fallthrough]];
     case 3:
-      return secondChapter[scenario - 2].tries[0] != chapter2::NotFought ||
+      return secondChapter[scenario - 2].tries[0] != chapter2::NotFought &&
              (secondChapter[scenario - 2].tries[0] == chapter2::Fail &&
               secondChapter[scenario - 2].tries[1] != chapter2::NotFought);
       break;
     case 4:
       [[fallthrough]];
     case 5:
-      return thirdChapter[scenario - 4].tries[0] != chapter3::NotFought ||
+      return thirdChapter[scenario - 4].tries[0] != chapter3::NotFought &&
              (thirdChapter[scenario - 4].tries[0] == chapter3::Fail &&
               thirdChapter[scenario - 4].tries[1] != chapter3::NotFought);
       break;

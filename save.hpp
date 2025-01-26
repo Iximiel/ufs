@@ -16,15 +16,15 @@ namespace ufsct {
     int cityID = -1;
     int charID = -1;
     int sceneID = -1;
-  };
-
-  struct chapter2 : public chapter1 {
     int elitecharID = -1;
-  };
-
-  struct chapter3 : public chapter2 {
     int elitecharID2 = -1;
   };
+
+  // this is an experiment to use same data with different types, I do not know
+  // if I am lazy or tired
+  struct chapter2 : public chapter1 {};
+
+  struct chapter3 : public chapter1 {};
 
   class Save {
     std::string name;
@@ -45,6 +45,11 @@ namespace ufsct {
     bool load (std::string_view);
     bool save (std::string_view);
     std::array<int, 8> getSurvivedCities ();
+    std::string getCampaignName () const;
+    // this gets  generally chapter
+    chapter3 getChapter (int chapter, int battle);
+    void setTry (int chapter, int battle, int tryNumber, int difficulty);
+
     const chapter1 &getFirstChapter (int battle) const;
     const chapter2 &getSecondChapter (int battle) const;
     const chapter3 &getThirdChapter (int battle) const;

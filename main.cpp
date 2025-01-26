@@ -194,15 +194,114 @@ public:
     return navigation::ufsSave;
   }
   navigation battleMenu (ftxui::ScreenInteractive &screen) {
+    std::cerr << "battleMenu" << std::endl;
+    // determine which battle have been prepared
+    int lastPreparedBattle = playerdata.getLastBattlePrepared ();
+    std::cerr << "lastPreparedBattle: " << lastPreparedBattle << std::endl;
+    // determine if the last battle has been fought
+    bool lastPreparedBattleFought =
+      playerdata.calculateBattle (lastPreparedBattle);
+    std::cerr << "lastPreparedBattleFought: "
+              << (lastPreparedBattleFought ? "true" : "false") << std::endl;
+    if (lastPreparedBattle < 0) {
+      return battleChapter1Menu (screen);
+    }
+    if (lastPreparedBattle < 2) {
+      if (!lastPreparedBattleFought) {
+        return battleScoreMenu (screen);
+      }
+      return battleChapter1Menu (screen);
+    }
+    // if (lastPreparedBattle < 4) {
+    //   if (lastPreparedBattleFought) {
+    //     return battleScoreMenu (screen, lastPreparedBattle);
+    //   }
+    //   return battleChapter2Menu (screen);
+    // }
+    // if (lastPreparedBattle < 6) {
+    //   if (lastPreparedBattleFought) {
+    //     return battleScoreMenu (screen, lastPreparedBattle);
+    //   }
+    //   return battleChapter3Menu (screen);
+    // }
+    return navigation::ufsMain;
+  }
+
+  navigation battleScoreMenu (ftxui::ScreenInteractive &screen) {
+    using namespace ftxui;
+    std::cerr << "battleScoreMenu" << std::endl;
+    bool goBack = false;
+    bool next = false;
+    bool lost = false;
+    auto close = screen.ExitLoopClosure ();
+    auto backButton = Button ("Exit", [&] {
+      goBack = true;
+      close ();
+    });
+    auto winButton = Button ("Win", [&] {
+      next = true;
+      close ();
+    });
+    auto loseButton = Button ("Lost", [&] {
+      lost = true;
+      next = true;
+      close ();
+    });
     // determine which battle have been prepared
     int lastPreparedBattle = playerdata.getLastBattlePrepared ();
     // determine if the last battle has been fought
-    bool lastBattleFought = playerdata.calculateBattle (lastPreparedBattle);
-    if (lastPreparedBattle < 2) {
-      return battleChapter1Menu (screen);
-    }
+    int chapter = lastPreparedBattle / 2;
+    auto tdata = playerdata.getChapter (chapter, lastPreparedBattle % 2);
+    std::string charName = campaign.getCharacter (tdata.charID);
+    std::string scenarioName = campaign.getScenario (tdata.sceneID);
+    std::string cityName = campaign.getCity (tdata.cityID);
+    int tryID = tdata.tries[0] == ufsct::chapter1::NotFought ? 0 : 1;
+    std::cerr << "chapter: " << chapter
+              << " lastPreparedBattle: " << lastPreparedBattle << std::endl;
 
-    return navigation::ufsMain;
+    std::string battlescore = "0";
+
+    Component battreRes = Input (&battlescore);
+    battreRes |= CatchEvent ([&] (Event event) {
+      return event.is_character () && !std::isdigit (event.character ()[0]);
+    });
+
+    auto layout =
+      Container::Horizontal ({battreRes, winButton, loseButton, backButton});
+
+    screen.Loop (Renderer (layout, [&] {
+      return mainGrid (hbox (
+        {filler (),
+         hbox (
+           vbox (
+             window (text (scenarioName), text (cityName)),
+             border (text (charName)), //
+             hbox (
+               window (text ("try"), text (std::to_string (1 + tryID))),
+               window (text ("difficulty"), battreRes->Render ()) | flex)),
+           vbox (
+             winButton->Render (), loseButton->Render (),
+             backButton->Render ())),
+         filler ()}));
+    }));
+
+    if (goBack) {
+      return navigation::ufsMain;
+    }
+    if (next) {
+      int difficulty = 0;
+      if (lost) {
+        difficulty = ufsct::chapter1::Fail;
+      } else {
+        difficulty = std::stoi (battlescore);
+      }
+      // check wich battle needs to be fought
+
+      playerdata.setTry (chapter, lastPreparedBattle % 2, tryID, difficulty);
+      playerdata.save (file);
+      return navigation::ufsBattle;
+    }
+    return navigation::ufsBattle;
   }
 
   navigation battleChapter1Menu (ftxui::ScreenInteractive &screen) {
@@ -388,6 +487,7 @@ public:
     }
     if (fileSet) {
       playerdata.load (file);
+      campaignName = playerdata.getCampaignName ();
       return navigation::ufsBattle;
     }
     return navigation::ufsLoad;
