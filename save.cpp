@@ -4,11 +4,15 @@
 #include "djson/json_write.hpp"
 
 #include <fstream>
+#include <numeric>
+
 #include <iostream>
 
 namespace ufsct {
   Save::Save () {
-
+    std::iota (randomCharacterIDs.begin (), randomCharacterIDs.end (), 0);
+    std::iota (randomCitiesIDs.begin (), randomCitiesIDs.end (), 0);
+    std::iota (randomScenariosIDs.begin (), randomScenariosIDs.end (), 0);
   };
   Save::~Save () = default;
   Save &Save::operator= (const Save &) = default;
@@ -37,22 +41,18 @@ namespace ufsct {
 
   int Save::getRandomCharacterID (int const ch, int const index) const {
     // assert (index <4);
-    std::cerr << "index ch" << 4 * ch + index << std::endl;
     return randomCharacterIDs.at (4 * ch + index);
   }
   int Save::getRandomCityID (int const ch, int const index) const {
     if (ch == 0) {
       // assert (index <4);
-      std::cerr << "index ci" << index << std::endl;
       return randomCitiesIDs.at (index);
     }
     // assert (index <5);
-    std::cerr << "index sc" << 4 + 5 * (ch - 1) + index << std::endl;
     return randomCitiesIDs.at (4 + 5 * (ch - 1) + index);
   }
   int Save::getRandomScenarioID (int const ch, int const index) const {
     // assert (index <4);
-    std::cerr << "index " << 4 * ch + index << std::endl;
     return randomScenariosIDs.at (4 * ch + index);
   }
 
@@ -82,7 +82,18 @@ namespace ufsct {
       return false;
     }
     name = saveRead->get<djson::String> ("name");
-
+    auto i_randomCharacterIDs =
+      saveRead->get<djson::Array> ("randomCharacterIDs");
+    auto i_randomCitiesIDs = saveRead->get<djson::Array> ("randomCitiesIDs");
+    auto i_randomScenariosIDs =
+      saveRead->get<djson::Array> ("randomScenariosIDs");
+    for (size_t i = 0; i < 14; i++) {
+      randomCitiesIDs[i] = i_randomCitiesIDs.get<djson::Number> (i);
+      if (i < 12) {
+        randomCharacterIDs[i] = i_randomCharacterIDs.get<djson::Number> (i);
+        randomScenariosIDs[i] = i_randomScenariosIDs.get<djson::Number> (i);
+      }
+    }
     auto history = saveRead->get<djson::Object> ("history");
     for (const auto &key : history.Keys ()) {
       if (key == "chapter1") {
@@ -139,14 +150,14 @@ namespace ufsct {
 
   bool Save::save (std::string_view filename) {
     djson::Object history;
-
+    std::cerr << "save to " << filename << std::endl;
     if (firstChapter[0].charID != -1) {
       djson::Array ch1;
       ch1.push_back (saveChapter (firstChapter[0]));
       if (firstChapter[1].charID != -1) {
         ch1.push_back (saveChapter (firstChapter[1]));
       }
-      history["chapter1"] = ch1;
+      history["chapter1"] = std::move (ch1);
     }
 
     if (secondChapter[0].charID != -1) {
@@ -178,7 +189,25 @@ namespace ufsct {
     */
     djson::Object save;
     save["name"] = djson::String{name};
-    save["history"] = history;
+    djson::Array export_randomCitiesIDs;
+    export_randomCitiesIDs.resize (14);
+    djson::Array export_randomCharacterIDs;
+    export_randomCharacterIDs.resize (12);
+    djson::Array export_randomScenariosIDs;
+    export_randomScenariosIDs.resize (12);
+    for (int i = 0; i < 14; ++i) {
+      export_randomCitiesIDs[i] = djson::Number (randomCitiesIDs[i]);
+      if (i < 12) {
+        export_randomCharacterIDs[i] = djson::Number (randomCharacterIDs[i]);
+        export_randomScenariosIDs[i] = djson::Number (randomScenariosIDs[i]);
+      }
+    }
+    save["randomCitiesIDs"] = std::move (export_randomCitiesIDs);
+    save["randomCharacterIDs"] = std::move (export_randomCharacterIDs);
+    save["randomScenariosIDs"] = std::move (export_randomScenariosIDs);
+
+    save["history"] = std::move (history);
+
     std::ofstream file (filename.data ());
     djson::write (file, save);
 
@@ -216,6 +245,10 @@ namespace ufsct {
     std::copy (citiesID.begin (), citiesID.end (), randomCitiesIDs.begin ());
     std::copy (charID.begin (), charID.end (), randomCharacterIDs.begin ());
     std::copy (sceneID.begin (), sceneID.end (), randomScenariosIDs.begin ());
+    for (int i = 0; i < 4; ++i) {
+      std::cerr << randomCharacterIDs[i] << " ";
+    }
+    std::cerr << std::endl;
   }
 
   void Save::setSecondChapter (
@@ -238,5 +271,53 @@ namespace ufsct {
     std::copy (charID.begin (), charID.end (), randomCharacterIDs.begin () + 8);
     std::copy (
       sceneID.begin (), sceneID.end (), randomScenariosIDs.begin () + 8);
+  }
+
+  int Save::getLastBattlePrepared () const {
+    // find the "id" of the last prepared scenario by looking if the city has
+    // been selected
+    int currentBattle = -1;
+    for (int i = 0; i < 2; ++i) {
+      if (firstChapter[i].cityID != -1) {
+        ++currentBattle;
+      }
+      if (secondChapter[i].cityID != -1) {
+        ++currentBattle;
+      }
+      if (thirdChapter[i].cityID != -1) {
+        ++currentBattle;
+      }
+    }
+    return currentBattle;
+  }
+  bool Save::calculateBattle (int scenario) const {
+    // given a scenario, returns the last battle fought
+    // a battle is fought if the first try has been fought
+    // or if the second try has been fought after a failed first try
+    switch (scenario) {
+    case 0:
+      [[fallthrough]];
+    case 1:
+      return firstChapter[scenario].tries[0] != chapter1::NotFought ||
+             (firstChapter[scenario].tries[0] == chapter1::Fail &&
+              firstChapter[scenario].tries[1] != chapter1::NotFought);
+      break;
+    case 2:
+      [[fallthrough]];
+    case 3:
+      return secondChapter[scenario - 2].tries[0] != chapter2::NotFought ||
+             (secondChapter[scenario - 2].tries[0] == chapter2::Fail &&
+              secondChapter[scenario - 2].tries[1] != chapter2::NotFought);
+      break;
+    case 4:
+      [[fallthrough]];
+    case 5:
+      return thirdChapter[scenario - 4].tries[0] != chapter3::NotFought ||
+             (thirdChapter[scenario - 4].tries[0] == chapter3::Fail &&
+              thirdChapter[scenario - 4].tries[1] != chapter3::NotFought);
+      break;
+    default:
+      return false;
+    }
   }
 } // namespace ufsct

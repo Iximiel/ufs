@@ -8,7 +8,11 @@
 namespace ufsct {
 
   struct chapter1 {
-    std::array<int, 2> tries = {-1, -1};
+    constexpr static int NotFought = -2;
+    constexpr static int Fail = -1;
+    // The tries can have 3 states: NotFought, Fail, value difficulty in case of
+    // victory
+    std::array<int, 2> tries = {NotFought, NotFought};
     int cityID = -1;
     int charID = -1;
     int sceneID = -1;
@@ -47,6 +51,10 @@ namespace ufsct {
     chapter1 &getFirstChapter (int battle);
     chapter2 &getSecondChapter (int battle);
     chapter3 &getThirdChapter (int battle);
+
+    int getLastBattlePrepared () const;
+    bool calculateBattle (int scenario) const;
+
     int getRandomCharacterID (int ch, int index) const;
     int getRandomCityID (int ch, int index) const;
     int getRandomScenarioID (int ch, int index) const;

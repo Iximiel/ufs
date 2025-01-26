@@ -25,6 +25,11 @@ class UnderFallingSkiesTracker {
   std::mt19937 rng{std::random_device{}()};
   std::string file;
   std::string campaignName{"Campaign name"};
+  void reset () {
+    playerdata = ufsct::Save ();
+    file = "";
+    campaignName = "Campaign name";
+  }
 
 public:
   enum class navigation {
@@ -35,7 +40,9 @@ public:
     ufsSave,
     ufsBattle
   };
+
   navigation mainMenu (ftxui::ScreenInteractive &screen) {
+    reset ();
     using namespace ftxui;
     using enum navigation;
     const std::vector<std::string> menu_entries = {
@@ -77,9 +84,7 @@ public:
     auto campaignNameI = Input (&campaignName);
 
     auto layout = Container::Horizontal (
-      {campaignNameI,
-
-       Container::Vertical ({startButton, backButton})});
+      {campaignNameI, Container::Vertical ({startButton, backButton})});
 
     screen.Loop (Renderer (layout, [&] {
       return mainGrid (hbox (
@@ -189,7 +194,15 @@ public:
     return navigation::ufsSave;
   }
   navigation battleMenu (ftxui::ScreenInteractive &screen) {
-    return battleChapter1Menu (screen);
+    // determine which battle have been prepared
+    int lastPreparedBattle = playerdata.getLastBattlePrepared ();
+    // determine if the last battle has been fought
+    bool lastBattleFought = playerdata.calculateBattle (lastPreparedBattle);
+    if (lastPreparedBattle < 2) {
+      return battleChapter1Menu (screen);
+    }
+
+    return navigation::ufsMain;
   }
 
   navigation battleChapter1Menu (ftxui::ScreenInteractive &screen) {
@@ -197,7 +210,7 @@ public:
     std::cerr << "battleChapter1Menu" << std::endl;
     bool goBack = false;
     auto close = screen.ExitLoopClosure ();
-    auto backButton = Button ("Back", [&] {
+    auto backButton = Button ("Exit", [&] {
       goBack = true;
       close ();
     });
@@ -221,10 +234,11 @@ public:
     Elements battleChoice;
     for (int i = 0; i < 2; i++) {
       std::cerr << i << std::endl;
-      setbttn[i] = Button ("Set " + std::to_string (i + 1), [&] {
-        chosenID = i + start;
-        close ();
-      });
+      setbttn[i] =
+        Button ("Set " + std::to_string (i + 1), [&chosenID, &close, i, start] {
+          chosenID = i + start;
+          close ();
+        });
       battleChoice.push_back (window (
         text ("Set " + std::to_string (i + 1)),
         vbox (
@@ -237,8 +251,9 @@ public:
             text (campaign.getScenario (
               playerdata.getRandomScenarioID (0, i + start)))),
           window (
-            text ("city"), text (campaign.getCity (
-                             playerdata.getRandomCityID (0, i + start)))))));
+            text ("city"),           //
+            text (campaign.getCity ( //
+              playerdata.getRandomCityID (0, i + start)))))));
     }
 
     auto layout = Container::Horizontal (
@@ -256,21 +271,32 @@ public:
     if (goBack) {
       return navigation::ufsMain;
     }
+    // so that becames 1 or 0
+    start /= 2;
+    std::cerr << "chosenID: " << chosenID << std::endl;
+    std::cerr << "charID    : " << playerdata.getRandomCharacterID (0, chosenID)
+              << "\n";
+    std::cerr << "scenarioID: " << playerdata.getRandomScenarioID (0, chosenID)
+              << "\n";
+    std::cerr << "cityID    : " << playerdata.getRandomCityID (0, chosenID)
+              << "\n";
 
-    playerdata.getFirstChapter (0).charID =
+    playerdata.getFirstChapter (start).charID =
       playerdata.getRandomCharacterID (0, chosenID);
-    playerdata.getFirstChapter (0).sceneID =
+    playerdata.getFirstChapter (start).sceneID =
       playerdata.getRandomScenarioID (0, chosenID);
-    playerdata.getFirstChapter (0).cityID =
+    playerdata.getFirstChapter (start).cityID =
       playerdata.getRandomCityID (0, chosenID);
+
     playerdata.save (file);
-    return navigation::ufsMain;
+    return navigation::ufsBattle;
   }
 
   navigation loadMenu (ftxui::ScreenInteractive &screen) {
     using namespace ftxui;
     bool goBack = false;
     bool readyToLoad = false;
+    bool fileSet = false;
     int selection2 = 0;
     ftxui::MenuOption option;
     auto close = screen.ExitLoopClosure ();
@@ -289,6 +315,9 @@ public:
           } else {
             if (!std::filesystem::is_directory (path / selected)) {
               visual = (path / selected).string ();
+              file = (path / selected).string ();
+
+              fileSet = true;
             }
           }
           visual = path.string ();
@@ -314,6 +343,7 @@ public:
           path /= selected;
           visual = path.string ();
         } else {
+          visual = (path / selected).string ();
           readyToLoad = true;
         }
       }
@@ -330,7 +360,7 @@ public:
       {dirMenu | flex,
        Container::Vertical (
          {Renderer ([] { return filler (); }), openButton, backButton})});
-    while (!goBack && !readyToLoad) {
+    while (!goBack && !fileSet) {
       FileAndDirs.resize (1);
       FileAndDirs[0] = "..";
       for (auto &p : std::filesystem::directory_iterator (path)) {
@@ -356,8 +386,7 @@ public:
     if (goBack) {
       return navigation::ufsMain;
     }
-    if (readyToLoad) {
-      file = visual;
+    if (fileSet) {
       playerdata.load (file);
       return navigation::ufsBattle;
     }
