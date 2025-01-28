@@ -319,7 +319,7 @@ public:
       close ();
     });
     int start = 0;
-    if (playerdata.getChapter (0, 0).charID != -1) {
+    if (playerdata.getChapter (chapter, 0).charID != -1) {
       start = 2;
       std::cerr << "second battle" << std::endl;
     }
@@ -458,7 +458,15 @@ public:
         }
       }
     }
-
+    {
+      auto ch = playerdata.getChapter (chapter, start);
+      std::cerr << "chapter   : " << chapter << ", (" << start << ")\n";
+      std::cerr << "cityID    : " << ch.cityID << "\n";
+      std::cerr << "charID    : " << ch.charID << "\n";
+      std::cerr << "sceneID   : " << ch.sceneID << "\n";
+      std::cerr << "elitecharID: " << ch.elitecharID << "\n";
+      std::cerr << "elitecharID2: " << ch.elitecharID2 << "\n";
+    }
     playerdata.save (file);
     return navigation::ufsBattle;
   }

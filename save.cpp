@@ -187,6 +187,7 @@ namespace ufsct {
     djson::Object history;
     std::cerr << "save to " << filename << std::endl;
     if (firstChapter[0].charID != -1) {
+      std::cerr << "save firstChapter" << std::endl;
       djson::Array ch1;
       ch1.push_back (saveChapter (firstChapter[0]));
       if (firstChapter[1].charID != -1) {
@@ -197,20 +198,22 @@ namespace ufsct {
 
     if (secondChapter[0].charID != -1) {
       djson::Array ch2;
+      std::cerr << "save secondChapter" << std::endl;
       ch2.push_back (saveChapter (secondChapter[0]));
       if (secondChapter[1].charID != -1) {
         ch2.push_back (saveChapter (secondChapter[1]));
       }
-      history["chapter2"] = ch2;
+      history["chapter2"] = std::move (ch2);
     }
 
     if (thirdChapter[0].charID != -1) {
+      std::cerr << "save thirdChapter" << std::endl;
       djson::Array ch3;
       ch3.push_back (saveChapter (thirdChapter[0]));
       if (thirdChapter[1].charID != -1) {
         ch3.push_back (saveChapter (thirdChapter[1]));
       }
-      history["chapter3"] = ch3;
+      history["chapter3"] = std::move (ch3);
     }
     /*
         if (fourthChapter[0].charID != -1) {
