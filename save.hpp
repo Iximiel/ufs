@@ -63,12 +63,36 @@ namespace ufsct {
     int getRandomCharacterID (int ch, int index) const;
     int getRandomCityID (int ch, int index) const;
     int getRandomScenarioID (int ch, int index) const;
-    void
-      setFistChapter (std::span<int, 4>, std::span<int, 4>, std::span<int, 4>);
+    // a lazy way to write less code in the UI:
+    template <int chapter, int cityDim>
+    void setChapter (
+      std::span<int, cityDim> citiesID,
+      std::span<int, 4> charID,
+      std::span<int, 4> sceneID) {
+      if constexpr (chapter == 0) {
+        setFistChapter (citiesID, charID, sceneID);
+      } else if constexpr (chapter == 1) {
+        setSecondChapter (citiesID, charID, sceneID);
+      } else if constexpr (chapter == 2) {
+        setThirdChapter (citiesID, charID, sceneID);
+      }
+    }
+
+    void setFistChapter (
+      std::span<int, 4> citiesID,
+      std::span<int, 4> charID,
+      std::span<int, 4> sceneID);
+
     void setSecondChapter (
-      std::span<int, 5>, std::span<int, 4>, std::span<int, 4>);
-    void
-      setThirdChapter (std::span<int, 5>, std::span<int, 4>, std::span<int, 4>);
+      std::span<int, 5> citiesID,
+      std::span<int, 4> charID,
+      std::span<int, 4> sceneID);
+    void setThirdChapter (
+      std::span<int, 5> citiesID,
+      std::span<int, 4> charID,
+      std::span<int, 4> sceneID);
+    std::vector<int> getPossibleElites (int chapter) const;
   };
+
 } // namespace ufsct
 #endif // UFSCT_SAVE_H

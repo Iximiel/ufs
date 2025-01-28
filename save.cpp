@@ -248,14 +248,23 @@ namespace ufsct {
 
     return true;
   }
+
+  int citySurvived (chapter1 c) {
+    // assuming that both the tries have happened
+    if (c.tries[0] != chapter1::Fail || c.tries[1] != chapter1::Fail) {
+      return c.cityID;
+    }
+    return -1;
+  }
+
   std::array<int, 8> Save::getSurvivedCities () {
     std::array<int, 8> toret;
-    toret[0] = firstChapter[0].cityID;
-    toret[1] = firstChapter[1].cityID;
-    toret[2] = secondChapter[0].cityID;
-    toret[3] = secondChapter[1].cityID;
-    toret[4] = thirdChapter[0].cityID;
-    toret[5] = thirdChapter[1].cityID;
+    toret[0] = citySurvived (firstChapter[0]);
+    toret[1] = citySurvived (firstChapter[1]);
+    toret[2] = citySurvived (secondChapter[0]);
+    toret[3] = citySurvived (secondChapter[1]);
+    toret[4] = citySurvived (thirdChapter[0]);
+    toret[5] = citySurvived (thirdChapter[1]);
     // the fifth city of the second draft is saved for later
     toret[6] = randomCitiesIDs[8];
     // the fifth city of the third draft is saved is saved for later
@@ -333,21 +342,24 @@ namespace ufsct {
     case 0:
       [[fallthrough]];
     case 1:
-      return firstChapter[scenario].tries[0] != chapter1::NotFought &&
+      return (firstChapter[scenario].tries[0] != chapter1::NotFought &&
+              firstChapter[scenario].tries[1] == chapter1::NotFought) ||
              (firstChapter[scenario].tries[0] == chapter1::Fail &&
               firstChapter[scenario].tries[1] != chapter1::NotFought);
       break;
     case 2:
       [[fallthrough]];
     case 3:
-      return secondChapter[scenario - 2].tries[0] != chapter2::NotFought &&
+      return (secondChapter[scenario - 2].tries[0] != chapter2::NotFought &&
+              secondChapter[scenario - 2].tries[1] == chapter2::NotFought) ||
              (secondChapter[scenario - 2].tries[0] == chapter2::Fail &&
               secondChapter[scenario - 2].tries[1] != chapter2::NotFought);
       break;
     case 4:
       [[fallthrough]];
     case 5:
-      return thirdChapter[scenario - 4].tries[0] != chapter3::NotFought &&
+      return (thirdChapter[scenario - 4].tries[0] != chapter3::NotFought &&
+              thirdChapter[scenario - 4].tries[1] == chapter3::NotFought) ||
              (thirdChapter[scenario - 4].tries[0] == chapter3::Fail &&
               thirdChapter[scenario - 4].tries[1] != chapter3::NotFought);
       break;
@@ -355,4 +367,38 @@ namespace ufsct {
       return false;
     }
   }
+  std::vector<int> Save::getPossibleElites (int chapter) const {
+    std::vector<int> toret;
+    if (chapter == 0) {
+      return toret;
+    }
+    toret.push_back (firstChapter[0].charID);
+    toret.push_back (firstChapter[1].charID);
+    if (chapter == 1) {
+      // if (secondChapter[0].elitecharID != -1) -1 are not present
+      toret.erase (
+        std::remove (
+          toret.begin (), toret.end (), secondChapter[0].elitecharID),
+        toret.end ());
+
+      return toret;
+    }
+    toret.push_back (secondChapter[0].charID);
+    toret.push_back (secondChapter[1].charID);
+    if (chapter == 2) {
+      // if (thirdChapter[0].elitecharID != -1) -1 are not present
+      toret.erase (
+        std::remove (toret.begin (), toret.end (), thirdChapter[0].elitecharID),
+        toret.end ());
+      toret.erase (
+        std::remove (
+          toret.begin (), toret.end (), thirdChapter[0].elitecharID2),
+        toret.end ());
+      return toret;
+    }
+    toret.push_back (thirdChapter[0].charID);
+    toret.push_back (thirdChapter[1].charID);
+    return toret;
+  }
+
 } // namespace ufsct
