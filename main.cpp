@@ -199,25 +199,25 @@ public:
     int lastPreparedBattle = playerdata.getLastBattlePrepared ();
     std::cerr << "lastPreparedBattle: " << lastPreparedBattle << std::endl;
     // determine if the last battle has been fought
-    bool lastPreparedBattleFought =
+    bool lastPreparedBattleCompleted =
       playerdata.calculateBattle (lastPreparedBattle);
     std::cerr << "lastPreparedBattleFought: "
-              << (lastPreparedBattleFought ? "true" : "false") << std::endl;
-    if (lastPreparedBattle < 0) {
-      return battleChapter1Menu (screen);
+              << (lastPreparedBattleCompleted ? "true" : "false") << std::endl;
+    if (!lastPreparedBattleCompleted && lastPreparedBattle >= 0) {
+      // this means that we have the data
+      std::cerr << "we have the data" << std::endl;
+      return battleScoreMenu (screen);
     }
-    if (lastPreparedBattle < 2) {
-      if (!lastPreparedBattleFought) {
+    if (lastPreparedBattle < 1) {
+      return battleChapterMenu<0> (screen);
+    }
+    if (lastPreparedBattle < 3) {
+      std::cerr << "\tlastPreparedBattle: " << lastPreparedBattle << std::endl;
+      if (!lastPreparedBattleCompleted) {
         return battleScoreMenu (screen);
       }
-      return battleChapter1Menu (screen);
+      return battleChapterMenu<1> (screen);
     }
-    // if (lastPreparedBattle < 4) {
-    //   if (lastPreparedBattleFought) {
-    //     return battleScoreMenu (screen, lastPreparedBattle);
-    //   }
-    //   return battleChapter2Menu (screen);
-    // }
     // if (lastPreparedBattle < 6) {
     //   if (lastPreparedBattleFought) {
     //     return battleScoreMenu (screen, lastPreparedBattle);
@@ -249,8 +249,10 @@ public:
     });
     // determine which battle have been prepared
     int lastPreparedBattle = playerdata.getLastBattlePrepared ();
+    std::cerr << "lastPreparedBattle: " << lastPreparedBattle << std::endl;
     // determine if the last battle has been fought
     int chapter = lastPreparedBattle / 2;
+    std::cerr << "chapter: " << chapter << std::endl;
     auto tdata = playerdata.getChapter (chapter, lastPreparedBattle % 2);
     std::string charName = campaign.getCharacter (tdata.charID);
     std::string scenarioName = campaign.getScenario (tdata.sceneID);
@@ -304,17 +306,20 @@ public:
     return navigation::ufsBattle;
   }
 
-  navigation battleChapter1Menu (ftxui::ScreenInteractive &screen) {
+  template <int chapter>
+  navigation battleChapterMenu (ftxui::ScreenInteractive &screen) {
     using namespace ftxui;
-    std::cerr << "battleChapter1Menu" << std::endl;
+    std::cerr << "battleChapter" << chapter << "Menu" << std::endl;
     bool goBack = false;
+    // in case of fisrt chapter the lamba of che checkob is never explored
+    bool ready = chapter == 0;
     auto close = screen.ExitLoopClosure ();
     auto backButton = Button ("Exit", [&] {
       goBack = true;
       close ();
     });
     int start = 0;
-    if (playerdata.getFirstChapter (0).charID != -1) {
+    if (playerdata.getChapter (0, 0).charID != -1) {
       start = 2;
       std::cerr << "second battle" << std::endl;
     }
@@ -325,39 +330,69 @@ public:
       std::shuffle (charID.begin (), charID.end (), rng);
       std::array<int, 4> sceneID = {0, 1, 2, 3};
       std::shuffle (sceneID.begin (), sceneID.end (), rng);
-      std::array<int, 4> citiesID = {0, 1, 2, 3};
-      std::shuffle (citiesID.begin (), citiesID.end (), rng);
-      playerdata.setFistChapter (citiesID, charID, sceneID);
+      if constexpr (chapter == 0) {
+        std::array<int, 4> citiesID = {0, 1, 2, 3};
+        std::shuffle (citiesID.begin (), citiesID.end (), rng);
+        playerdata.setChapter<chapter, 4> (citiesID, charID, sceneID);
+      } else {
+        std::array<int, 5> citiesID = {0, 1, 2, 3, 4};
+        std::shuffle (citiesID.begin (), citiesID.end (), rng);
+        playerdata.setChapter<chapter, 5> (citiesID, charID, sceneID);
+      }
     }
     Components setbttn (2);
     Elements battleChoice;
     for (int i = 0; i < 2; i++) {
       std::cerr << i << std::endl;
-      setbttn[i] =
-        Button ("Set " + std::to_string (i + 1), [&chosenID, &close, i, start] {
-          chosenID = i + start;
-          close ();
-        });
+      setbttn[i] = Maybe (
+        Button (
+          "Set " + std::to_string (i + 1),
+          [&chosenID, &close, i, start] {
+            chosenID = i + start;
+            close ();
+          }),
+        &ready);
       battleChoice.push_back (window (
         text ("Set " + std::to_string (i + 1)),
         vbox (
           window (
             text ("character"),
             text (campaign.getCharacter (
-              playerdata.getRandomCharacterID (0, i + start)))),
+              playerdata.getRandomCharacterID (chapter, i + start)))),
           window (
             text ("scenario"),
             text (campaign.getScenario (
-              playerdata.getRandomScenarioID (0, i + start)))),
+              playerdata.getRandomScenarioID (chapter, i + start)))),
           window (
             text ("city"),           //
             text (campaign.getCity ( //
-              playerdata.getRandomCityID (0, i + start)))))));
+              playerdata.getRandomCityID (chapter, i + start)))))));
+    }
+
+    auto choices = Container::Vertical ({Container::Horizontal (
+      {Renderer ([&] { return battleChoice[0]; }),
+       Renderer ([&] { return battleChoice[1]; })})});
+    CheckboxOption elitesch;
+    auto elitesChoiceIDs = playerdata.getPossibleElites (chapter);
+    std::array<bool, 2 * chapter> elitesChoice;
+    elitesch.on_change = [&] {
+      int choices =
+        std::count (elitesChoice.begin (), elitesChoice.end (), true);
+      ready = choices == chapter;
+    };
+    if constexpr (chapter > 0) {
+      auto elites = Container::Vertical ({});
+      for (int i = 0; i < elitesChoiceIDs.size (); i++) {
+        elitesChoice[i] = false;
+        elites->Add (Checkbox (
+          campaign.getCharacter (elitesChoiceIDs[i]), &elitesChoice[i],
+          elitesch));
+      }
+      choices->Add (elites);
     }
 
     auto layout = Container::Horizontal (
-      {Renderer ([&] { return battleChoice[0]; }),
-       Renderer ([&] { return battleChoice[1]; }),
+      {choices,
 
        Container::Vertical (
          {Renderer ([&] { return filler (); }), setbttn[0], setbttn[1],
@@ -372,20 +407,57 @@ public:
     }
     // so that becames 1 or 0
     start /= 2;
-    std::cerr << "chosenID: " << chosenID << std::endl;
-    std::cerr << "charID    : " << playerdata.getRandomCharacterID (0, chosenID)
-              << "\n";
-    std::cerr << "scenarioID: " << playerdata.getRandomScenarioID (0, chosenID)
-              << "\n";
-    std::cerr << "cityID    : " << playerdata.getRandomCityID (0, chosenID)
-              << "\n";
-
-    playerdata.getFirstChapter (start).charID =
-      playerdata.getRandomCharacterID (0, chosenID);
-    playerdata.getFirstChapter (start).sceneID =
-      playerdata.getRandomScenarioID (0, chosenID);
-    playerdata.getFirstChapter (start).cityID =
-      playerdata.getRandomCityID (0, chosenID);
+    std::cerr << "chosenID  : " << chosenID << std::endl;
+    std::cerr << "charID    : "
+              << playerdata.getRandomCharacterID (chapter, chosenID) << "\n";
+    std::cerr << "scenarioID: "
+              << playerdata.getRandomScenarioID (chapter, chosenID) << "\n";
+    std::cerr << "cityID    : "
+              << playerdata.getRandomCityID (chapter, chosenID) << "\n";
+    for (int i = 0; i < chapter; i++) {
+      if (elitesChoice[i]) {
+        std::cerr << "eliteID   : " << elitesChoiceIDs[i] << "\n";
+      }
+    }
+    if constexpr (chapter == 0) {
+      playerdata.getFirstChapter (start).charID =
+        playerdata.getRandomCharacterID (chapter, chosenID);
+      playerdata.getFirstChapter (start).sceneID =
+        playerdata.getRandomScenarioID (chapter, chosenID);
+      playerdata.getFirstChapter (start).cityID =
+        playerdata.getRandomCityID (chapter, chosenID);
+    } else if constexpr (chapter == 1) {
+      playerdata.getSecondChapter (start).charID =
+        playerdata.getRandomCharacterID (chapter, chosenID);
+      playerdata.getSecondChapter (start).sceneID =
+        playerdata.getRandomScenarioID (chapter, chosenID);
+      playerdata.getSecondChapter (start).cityID =
+        playerdata.getRandomCityID (chapter, chosenID);
+      for (int i = 0; i < 2; i++) {
+        if (elitesChoice[i])
+          playerdata.getSecondChapter (start).elitecharID = elitesChoiceIDs[i];
+      }
+    } else if constexpr (chapter == 2) {
+      playerdata.getThirdChapter (start).charID =
+        playerdata.getRandomCharacterID (chapter, chosenID);
+      playerdata.getThirdChapter (start).sceneID =
+        playerdata.getRandomScenarioID (chapter, chosenID);
+      playerdata.getThirdChapter (start).cityID =
+        playerdata.getRandomCityID (chapter, chosenID);
+      int i = 0;
+      for (i = 0; i < 4; i++) {
+        if (elitesChoice[i]) {
+          playerdata.getThirdChapter (start).elitecharID = elitesChoiceIDs[i];
+          break;
+        }
+      }
+      for (i = 0; i < 4; i++) {
+        if (elitesChoice[i]) {
+          playerdata.getThirdChapter (start).elitecharID2 = elitesChoiceIDs[i];
+          break;
+        }
+      }
+    }
 
     playerdata.save (file);
     return navigation::ufsBattle;
