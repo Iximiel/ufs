@@ -179,7 +179,7 @@ namespace ufsct {
 
   djson::Object saveChapter (chapter3 c) {
     auto toret = saveChapter (chapter2 (c));
-    toret["elitecharID2"] = djson::Number (c.elitecharID);
+    toret["elitecharID2"] = djson::Number (c.elitecharID2);
     return toret;
   }
 
@@ -341,30 +341,28 @@ namespace ufsct {
     // given a scenario, returns the last battle fought
     // a battle is fought if the first try has been fought
     // or if the second try has been fought after a failed first try
+    auto battleComplete = [] (std::array<int, 2> tries) -> bool {
+      return ( // first failed, any result in the second
+        (tries[0] == chapter1::Fail && tries[1] != chapter1::NotFought) ||
+        // Second not fought , success on the first
+        (tries[1] == chapter1::NotFought &&
+         (tries[0] != chapter1::Fail && tries[0] != chapter1::NotFought)));
+    };
     switch (scenario) {
     case 0:
       [[fallthrough]];
     case 1:
-      return (firstChapter[scenario].tries[0] != chapter1::NotFought &&
-              firstChapter[scenario].tries[1] == chapter1::NotFought) ||
-             (firstChapter[scenario].tries[0] == chapter1::Fail &&
-              firstChapter[scenario].tries[1] != chapter1::NotFought);
+      return battleComplete (firstChapter[scenario].tries);
       break;
     case 2:
       [[fallthrough]];
     case 3:
-      return (secondChapter[scenario - 2].tries[0] != chapter2::NotFought &&
-              secondChapter[scenario - 2].tries[1] == chapter2::NotFought) ||
-             (secondChapter[scenario - 2].tries[0] == chapter2::Fail &&
-              secondChapter[scenario - 2].tries[1] != chapter2::NotFought);
+      return battleComplete (secondChapter[scenario - 2].tries);
       break;
     case 4:
       [[fallthrough]];
     case 5:
-      return (thirdChapter[scenario - 4].tries[0] != chapter3::NotFought &&
-              thirdChapter[scenario - 4].tries[1] == chapter3::NotFought) ||
-             (thirdChapter[scenario - 4].tries[0] == chapter3::Fail &&
-              thirdChapter[scenario - 4].tries[1] != chapter3::NotFought);
+      return battleComplete (thirdChapter[scenario - 4].tries);
       break;
     default:
       return false;

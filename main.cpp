@@ -451,12 +451,16 @@ public:
         playerdata.getRandomCityID (chapter, chosenID);
       int i = 0;
       for (i = 0; i < 4; i++) {
+        std::cerr << i << ":" << i << "->" << elitesChoiceIDs[i] << std::endl;
         if (elitesChoice[i]) {
           playerdata.getThirdChapter (start).elitecharID = elitesChoiceIDs[i];
           break;
         }
       }
-      for (i = 0; i < 4; i++) {
+      ++i;
+      for (; i < 4; i++) {
+        std::cerr << i << ":" << i << "->" << elitesChoiceIDs[i] << std::endl;
+
         if (elitesChoice[i]) {
           playerdata.getThirdChapter (start).elitecharID2 = elitesChoiceIDs[i];
           break;
