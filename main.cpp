@@ -224,7 +224,121 @@ public:
       }
       return battleChapterMenu<2> (screen);
     }
+    return finalBattle (screen);
     return navigation::ufsMain;
+  }
+
+  navigation finalBattle (ftxui::ScreenInteractive &screen) {
+    using namespace ftxui;
+    std::cerr << "finalBattle" << std::endl;
+    bool goBack = false;
+    bool next = false;
+    bool win = false;
+    bool charactersSelected = false;
+    bool citySeleceted = false;
+    bool ready = false;
+    auto close = screen.ExitLoopClosure ();
+    auto backButton = Button ("Exit", [&] {
+      goBack = true;
+      close ();
+    });
+    auto winButton = Maybe (
+      Button (
+        "Win",
+        [&] {
+          win = true;
+          close ();
+        }),
+      &ready);
+    auto failButton = Maybe (
+      Button (
+        "Fail",
+        [&] {
+          win = false;
+          close ();
+        }),
+      &ready);
+
+    // character selection
+    CheckboxOption elitesch;
+    auto elitesChoiceIDs = playerdata.getPossibleElites (3);
+    std::array<bool, 6> elitesChoice;
+    elitesch.on_change = [&] {
+      charactersSelected =
+        std::count (elitesChoice.begin (), elitesChoice.end (), true) == 3;
+      ready = charactersSelected && citySeleceted;
+    };
+    auto characters = Container::Vertical ({});
+    for (int i = 0; i < elitesChoiceIDs.size (); i++) {
+      elitesChoice[i] = false;
+      characters->Add (Checkbox (
+        campaign.getCharacter (elitesChoiceIDs[i]), &elitesChoice[i],
+        elitesch));
+    }
+
+    // city selection
+    auto cities = Container::Vertical ({});
+    CheckboxOption citysch;
+    auto citiesChoiceIDs = playerdata.getSurvivedCities ();
+    std::array<bool, 8> citiesChoice;
+    citysch.on_change = [&] {
+      citySeleceted =
+        std::count (citiesChoice.begin (), citiesChoice.end (), true) == 1;
+      ready = charactersSelected && citySeleceted;
+    };
+    for (int i = 0; i < citiesChoiceIDs.size (); i++) {
+      citiesChoice[i] = false;
+      if (citiesChoiceIDs[i] != -1) {
+        cities->Add (Checkbox (
+          campaign.getCity (citiesChoiceIDs[i]), &citiesChoice[i], citysch));
+      }
+    }
+    ///
+    std::string battlescore = "0";
+    Component battreRes = Input (&battlescore);
+
+    auto activeElements = Container::Horizontal (
+      {winButton, failButton, backButton, characters, cities});
+    screen.Loop (Renderer (activeElements, [&] {
+      return mainGrid (hbox (
+        {filler (),
+         hbox (
+           window (text ("Cities"), cities->Render () | flex),
+           window (text ("Characters (3)"), characters->Render () | flex),
+           hbox (filler (), window (text ("difficulty"), battreRes->Render ())),
+           vbox (
+             filler (), winButton->Render (), failButton->Render (),
+             backButton->Render ())),
+         filler ()}));
+    }));
+    if (goBack) {
+      return navigation::ufsMain;
+    }
+    auto city = citiesChoiceIDs[*std::find (
+      citiesChoice.begin (), citiesChoice.end (), true)];
+
+    if (win) {
+      std::cerr << "Win" << battlescore << std::endl;
+      std::cerr << "In" << campaign.getCity (citiesChoiceIDs[city])
+                << std::endl;
+      std::array<int, 3> team;
+      for (int i = 0, k = 0; i < elitesChoice.size (); i++) {
+        if (elitesChoice[i]) {
+          team[k] = elitesChoiceIDs[i];
+          std::cerr << "\t" << campaign.getCharacter (team[k]) << std::endl;
+          ++k;
+        }
+      }
+      // save.endCampaing(city,score,team);
+      // playerdata.setBattleScore (std::stoi (battlescore));
+
+      return navigation::ufsMain;
+    }
+    std::cerr << "Lost" << campaign.getCity (citiesChoiceIDs[city])
+              << std::endl;
+    // save.finalBattleLost(city);
+
+    return navigation::ufsBattle;
   }
 
   navigation battleScoreMenu (ftxui::ScreenInteractive &screen) {
