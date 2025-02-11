@@ -37,6 +37,7 @@ namespace ufsct {
     std::array<int, 14> randomCitiesIDs;
     std::array<int, 8> lastBattle;
     std::array<int, 3> victoryTeam;
+    int lastBattleScore{-1};
 
   public:
     Save ();
@@ -94,6 +95,9 @@ namespace ufsct {
       std::span<int, 4> charID,
       std::span<int, 4> sceneID);
     std::vector<int> getPossibleElites (int chapter) const;
+    void endCampaign (int city, int score, std::array<int, 3> &team);
+    void chapter4BattleLost (int city);
+    bool lastBattleComplete () const;
   };
 
 } // namespace ufsct

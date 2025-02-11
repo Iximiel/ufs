@@ -329,15 +329,15 @@ public:
           ++k;
         }
       }
-      // save.endCampaing(city,score,team);
-      // playerdata.setBattleScore (std::stoi (battlescore));
-
+      auto score = std::stoi (battlescore);
+      playerdata.endCampaign (city, score, team);
+      playerdata.save (file);
       return navigation::ufsMain;
     }
     std::cerr << "Lost" << campaign.getCity (citiesChoiceIDs[city])
               << std::endl;
-    // save.finalBattleLost(city);
-
+    playerdata.chapter4BattleLost (city);
+    playerdata.save (file);
     return navigation::ufsBattle;
   }
 

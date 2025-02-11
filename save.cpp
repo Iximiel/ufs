@@ -158,6 +158,7 @@ namespace ufsct {
           for (size_t i = 0; i < theTeam.size (); i++) {
             victoryTeam[i] = theTeam.get<djson::Number> (i);
           }
+          lastBattleScore = tmp.get<djson::Number> ("score");
         }
         auto tmp2 = tmp.get<djson::Array> ("cities");
         for (size_t i = 0; i < tmp2.size (); i++) {
@@ -430,6 +431,31 @@ namespace ufsct {
     toret.push_back (thirdChapter[0].charID);
     toret.push_back (thirdChapter[1].charID);
     return toret;
+  }
+
+  void Save::endCampaign (int city, int score, std::array<int, 3> &team) {
+    // todo set the last -1 in the citylist to the number of the city
+    for (auto i = 0u; i < team.size (); i++) {
+      // use std::copy
+      victoryTeam[i] = team[i];
+    }
+    lastBattleScore = score;
+  }
+
+  void Save::chapter4BattleLost (int city) {
+    // todo set the last -1 in the citylist to the number of the city
+  }
+  bool Save::lastBattleComplete () const {
+    if (victoryTeam[0] != -1) {
+      return true;
+    }
+    bool hope = false;
+    // todo: check for non destroyed cities
+    for (auto i = 0u; i < lastBattle.size (); i++) {
+      hope |= lastBattle[i] == -1;
+    }
+
+    return hope;
   }
 
 } // namespace ufsct
