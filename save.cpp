@@ -152,7 +152,13 @@ namespace ufsct {
         }
       } else if (key == "chapter4") {
         auto tmp = history.get<djson::Object> ("chapter4");
-        isLastBattleWon = tmp.get<djson::Boolean> ("victory");
+        if (auto k = tmp.Keys ();
+            std::find (k.begin (), k.end (), "team") != k.end ()) {
+          auto theTeam = tmp.get<djson::Array> ("team");
+          for (size_t i = 0; i < theTeam.size (); i++) {
+            victoryTeam[i] = theTeam.get<djson::Number> (i);
+          }
+        }
         auto tmp2 = tmp.get<djson::Array> ("cities");
         for (size_t i = 0; i < tmp2.size (); i++) {
           lastBattle[i] = tmp2.get<djson::Number> (i);
@@ -218,7 +224,13 @@ namespace ufsct {
     }
     if (lastBattle[0] != -1) {
       djson::Object ch4;
-      ch4["victory"] = djson::Boolean (isLastBattleWon);
+      if (victoryTeam[0] != -1) {
+        auto team = djson::Array{};
+        team.emplace_back (djson::Number (victoryTeam[0]));
+        team.emplace_back (djson::Number (victoryTeam[1]));
+        team.emplace_back (djson::Number (victoryTeam[2]));
+        ch4["team"] = team;
+      }
       djson::Array cities;
       for (int i = 0; i < lastBattle.size (); ++i) {
         if (lastBattle[i] == -1) {
