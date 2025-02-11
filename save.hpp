@@ -35,6 +35,8 @@ namespace ufsct {
     std::array<int, 12> randomCharacterIDs;
     std::array<int, 12> randomScenariosIDs;
     std::array<int, 14> randomCitiesIDs;
+    std::array<int, 8> lastBattle;
+    bool isLastBattleWon{false};
 
   public:
     Save ();

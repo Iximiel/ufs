@@ -13,6 +13,7 @@ namespace ufsct {
     std::iota (randomCharacterIDs.begin (), randomCharacterIDs.end (), 0);
     std::iota (randomCitiesIDs.begin (), randomCitiesIDs.end (), 0);
     std::iota (randomScenariosIDs.begin (), randomScenariosIDs.end (), 0);
+    std::fill (lastBattle.begin (), lastBattle.end (), -1);
   };
   Save::~Save () = default;
   Save &Save::operator= (const Save &) = default;
@@ -149,14 +150,14 @@ namespace ufsct {
         if (tmp.size () > 1) {
           thirdChapter[1] = loadChapter<chapter3> (tmp.get<djson::Object> (1));
         }
-      } /*else if (key == "chapter4") {
-        auto tmp = history.get<djson::Array> ("chapter4");
-        fourthChapter[0] = loadChapter<chapter4>  (tmp.get<djson::Object> (0));
-        if (tmp.size () > 1) {
-          fourthChapter[1] = loadChapter<chapte4>  (tmp.get<djson::Object>
-      (1));
+      } else if (key == "chapter4") {
+        auto tmp = history.get<djson::Object> ("chapter4");
+        isLastBattleWon = tmp.get<djson::Boolean> ("victory");
+        auto tmp2 = tmp.get<djson::Array> ("cities");
+        for (size_t i = 0; i < tmp2.size (); i++) {
+          lastBattle[i] = tmp2.get<djson::Number> (i);
         }
-      }*/
+      }
     }
     return true;
   }
@@ -215,16 +216,20 @@ namespace ufsct {
       }
       history["chapter3"] = std::move (ch3);
     }
-    /*
-        if (fourthChapter[0].charID != -1) {
-          djson::Array ch4;
-          ch4.push_back (saveChapter (fourthChapter[0]));
-          if (fourthChapter[1].charID != -1) {
-            ch4.push_back (saveChapter (fourthChapter[1]));
-          }
-          history["chapter4"] = ch4;
+    if (lastBattle[0] != -1) {
+      djson::Object ch4;
+      ch4["victory"] = djson::Boolean (isLastBattleWon);
+      djson::Array cities;
+      for (int i = 0; i < lastBattle.size (); ++i) {
+        if (lastBattle[i] == -1) {
+          break;
         }
-    */
+        cities.push_back (djson::Number (lastBattle[i]));
+      }
+      ch4["cities"] = cities;
+      history["chapter4"] = ch4;
+    }
+
     djson::Object save;
     save["name"] = djson::String{name};
     djson::Array export_randomCitiesIDs;
@@ -271,7 +276,17 @@ namespace ufsct {
     // the fifth city of the second draft is saved for later
     toret[6] = randomCitiesIDs[8];
     // the fifth city of the third draft is saved is saved for later
-    toret[6] = randomCitiesIDs[13];
+    toret[7] = randomCitiesIDs[13];
+    // removing the destroyed cities in the last battle
+    for (auto i = 0u; i < lastBattle.size (); i++) {
+      if (lastBattle[i] == -1) {
+        break;
+      }
+      if (auto it = std::find (toret.begin (), toret.end (), lastBattle[i]);
+          it != toret.end ()) {
+        *it = -1;
+      }
+    }
     // sort in order go have the -1 in the end
     std::sort (toret.begin (), toret.end (), [] (auto a, auto b) {
       if (a == -1) {
@@ -321,6 +336,9 @@ namespace ufsct {
   }
 
   int Save::getLastBattlePrepared () const {
+    if (lastBattle[0] != -1) {
+      return 6;
+    }
     // find the "id" of the last prepared scenario by looking if the city has
     // been selected
     int currentBattle = -1;
