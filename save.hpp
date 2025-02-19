@@ -47,7 +47,7 @@ namespace ufsct {
     ~Save ();
     bool load (std::string_view);
     bool save (std::string_view);
-    std::array<int, 8> getSurvivedCities ();
+    std::array<int, 8> getSurvivedCities () const;
     std::string getCampaignName () const;
     // this gets  generally chapter
     chapter3 getChapter (int chapter, int battle);

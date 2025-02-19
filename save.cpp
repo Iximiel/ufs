@@ -231,6 +231,7 @@ namespace ufsct {
         team.emplace_back (djson::Number (victoryTeam[1]));
         team.emplace_back (djson::Number (victoryTeam[2]));
         ch4["team"] = team;
+        ch4["score"] = djson::Number (lastBattleScore);
       }
       djson::Array cities;
       for (int i = 0; i < lastBattle.size (); ++i) {
@@ -278,7 +279,7 @@ namespace ufsct {
     return -1;
   }
 
-  std::array<int, 8> Save::getSurvivedCities () {
+  std::array<int, 8> Save::getSurvivedCities () const {
     std::array<int, 8> toret;
     toret[0] = citySurvived (firstChapter[0]);
     toret[1] = citySurvived (firstChapter[1]);
@@ -434,7 +435,11 @@ namespace ufsct {
   }
 
   void Save::endCampaign (int city, int score, std::array<int, 3> &team) {
-    // todo set the last -1 in the citylist to the number of the city
+    // thisf functin assingthe city id to the first -1 in the lastBattle array
+    // in the score menu the last battle has the signigicance of being the
+    // victory city here
+    chapter4BattleLost (city);
+
     for (auto i = 0u; i < team.size (); i++) {
       // use std::copy
       victoryTeam[i] = team[i];
@@ -458,13 +463,10 @@ namespace ufsct {
     if (victoryTeam[0] != -1) {
       return true;
     }
-    bool hope = false;
-    // todo: check for non destroyed cities
-    for (auto i = 0u; i < lastBattle.size (); i++) {
-      hope |= lastBattle[i] == -1;
-    }
 
-    return hope;
+    auto survivedCities = getSurvivedCities ();
+    return survivedCities.size () !=
+           std::count (survivedCities.begin (), survivedCities.end (), -1);
   }
 
 } // namespace ufsct

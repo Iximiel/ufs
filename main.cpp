@@ -261,7 +261,6 @@ public:
 
     // character selection
     CheckboxOption elitesch;
-    std::cerr << "elites" << std::endl;
     auto elitesChoiceIDs = playerdata.getPossibleElites (3);
     std::array<bool, 6> elitesChoice;
     elitesch.on_change = [&] {
@@ -280,7 +279,6 @@ public:
     // city selection
     auto cities = Container::Vertical ({});
     CheckboxOption citysch;
-    std::cerr << "cities" << std::endl;
     auto citiesChoiceIDs = playerdata.getSurvivedCities ();
     std::array<bool, citiesChoiceIDs.size ()> citiesChoice;
     citysch.on_change = [&] {
@@ -300,7 +298,7 @@ public:
     Component battreRes = Input (&battlescore);
 
     auto activeElements = Container::Horizontal (
-      {winButton, failButton, backButton, characters, cities});
+      {battreRes, winButton, failButton, backButton, characters, cities});
     screen.Loop (Renderer (activeElements, [&] {
       return mainGrid (hbox (
         {filler (),
@@ -333,8 +331,7 @@ public:
     std::cerr << "city: " << city << std::endl;
     if (win) {
       std::cerr << "Win: " << battlescore << std::endl;
-      std::cerr << "In" << campaign.getCity (citiesChoiceIDs[city])
-                << std::endl;
+      std::cerr << "In" << campaign.getCity (city) << std::endl;
       std::array<int, 3> team;
       for (int i = 0, k = 0; i < elitesChoice.size (); i++) {
         if (elitesChoice[i]) {
@@ -346,7 +343,7 @@ public:
       auto score = std::stoi (battlescore);
       playerdata.endCampaign (city, score, team);
       playerdata.save (file);
-      return navigation::ufsMain;
+      return navigation::ufsBattle;
     }
     std::cerr << "Lost" << campaign.getCity (citiesChoiceIDs[city])
               << std::endl;
