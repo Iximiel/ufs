@@ -203,7 +203,9 @@ public:
       playerdata.calculateBattle (lastPreparedBattle);
     std::cerr << "lastPreparedBattleFought: "
               << (lastPreparedBattleCompleted ? "true" : "false") << std::endl;
-    if (!lastPreparedBattleCompleted && lastPreparedBattle >= 0) {
+    if (
+      !lastPreparedBattleCompleted && lastPreparedBattle >= 0 &&
+      lastPreparedBattle < 5) {
       // this means that we have the data
       std::cerr << "we have the data" << std::endl;
       return battleScoreMenu (screen);
@@ -212,7 +214,6 @@ public:
       return battleChapterMenu<0> (screen);
     }
     if (lastPreparedBattle < 3) {
-      std::cerr << "\tlastPreparedBattle: " << lastPreparedBattle << std::endl;
       if (!lastPreparedBattleCompleted) {
         return battleScoreMenu (screen);
       }
@@ -225,7 +226,6 @@ public:
       return battleChapterMenu<2> (screen);
     }
     return finalBattle (screen);
-    return navigation::ufsMain;
   }
 
   navigation finalBattle (ftxui::ScreenInteractive &screen) {
@@ -261,6 +261,7 @@ public:
 
     // character selection
     CheckboxOption elitesch;
+    std::cerr << "elites" << std::endl;
     auto elitesChoiceIDs = playerdata.getPossibleElites (3);
     std::array<bool, 6> elitesChoice;
     elitesch.on_change = [&] {
@@ -279,8 +280,9 @@ public:
     // city selection
     auto cities = Container::Vertical ({});
     CheckboxOption citysch;
+    std::cerr << "cities" << std::endl;
     auto citiesChoiceIDs = playerdata.getSurvivedCities ();
-    std::array<bool, 8> citiesChoice;
+    std::array<bool, citiesChoiceIDs.size ()> citiesChoice;
     citysch.on_change = [&] {
       citySeleceted =
         std::count (citiesChoice.begin (), citiesChoice.end (), true) == 1;
@@ -314,11 +316,23 @@ public:
     if (goBack) {
       return navigation::ufsMain;
     }
-    auto city = citiesChoiceIDs[*std::find (
-      citiesChoice.begin (), citiesChoice.end (), true)];
 
+    std::cerr << "\t>";
+    for (int i = 0; i < citiesChoice.size (); i++) {
+      std::cerr << citiesChoice[i] << std::flush;
+    }
+    std::cerr << "\n";
+    std::cerr << "\t>";
+    for (int i = 0; i < citiesChoiceIDs.size (); i++) {
+      std::cerr << citiesChoiceIDs[i] << " " << std::flush;
+    }
+    std::cerr << "\n";
+    auto city = citiesChoiceIDs
+      [std::find (citiesChoice.begin (), citiesChoice.end (), true) -
+       citiesChoice.begin ()];
+    std::cerr << "city: " << city << std::endl;
     if (win) {
-      std::cerr << "Win" << battlescore << std::endl;
+      std::cerr << "Win: " << battlescore << std::endl;
       std::cerr << "In" << campaign.getCity (citiesChoiceIDs[city])
                 << std::endl;
       std::array<int, 3> team;

@@ -3,6 +3,7 @@
 #include "djson/json_read.hpp"
 #include "djson/json_write.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <numeric>
 
@@ -13,7 +14,6 @@ namespace ufsct {
     std::iota (randomCharacterIDs.begin (), randomCharacterIDs.end (), 0);
     std::iota (randomCitiesIDs.begin (), randomCitiesIDs.end (), 0);
     std::iota (randomScenariosIDs.begin (), randomScenariosIDs.end (), 0);
-    std::fill (lastBattle.begin (), lastBattle.end (), -1);
   };
   Save::~Save () = default;
   Save &Save::operator= (const Save &) = default;
@@ -443,7 +443,16 @@ namespace ufsct {
   }
 
   void Save::chapter4BattleLost (int city) {
-    // todo set the last -1 in the citylist to the number of the city
+    std::cerr << "chapter4BattleLost" << std::endl;
+    std::cerr << "city: " << city << std::endl;
+    auto it = std::find (lastBattle.begin (), lastBattle.end (), -1);
+
+    std::cerr << "city: " << it << std::endl;
+    if (it != lastBattle.end ()) {
+      *it = city;
+    }
+
+    // you should not be here
   }
   bool Save::lastBattleComplete () const {
     if (victoryTeam[0] != -1) {

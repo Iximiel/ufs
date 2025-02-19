@@ -35,8 +35,8 @@ namespace ufsct {
     std::array<int, 12> randomCharacterIDs;
     std::array<int, 12> randomScenariosIDs;
     std::array<int, 14> randomCitiesIDs;
-    std::array<int, 8> lastBattle;
-    std::array<int, 3> victoryTeam;
+    std::array<int, 8> lastBattle{-1, -1, -1, -1, -1, -1, -1, -1};
+    std::array<int, 3> victoryTeam{-1, -1, -1};
     int lastBattleScore{-1};
 
   public:
