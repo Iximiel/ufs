@@ -8,9 +8,9 @@ namespace ufsct {
 
   std::string campaingElement (
     const djson::Object &campaign,
-    int chapter,
-    std::string category,
-    int index) {
+    int                  chapter,
+    std::string          category,
+    int                  index) {
     return std::get<djson::String> (
       std::get<djson::Object> (campaign.get<djson::Array> ("chapters")[chapter])
         .get<djson::Array> (category)[index]);
@@ -18,14 +18,14 @@ namespace ufsct {
 
   Campaign::Campaign (std::string_view filename) {
     std::ifstream file (filename.data ());
-    auto campaign = djson::read (file);
+    auto          campaign = djson::read (file);
 
     for (size_t i = 0; i < noc; i++) {
-      size_t shift = i * 4;
+      size_t shift     = i * 4;
       size_t cityShift = (i == 0) ? 0 : (4 + 5 * (i - 1));
       for (size_t j = 0; j < 4; j++) {
         characters[shift + j] = campaingElement (*campaign, i, "characters", j);
-        scenarios[shift + j] = campaingElement (*campaign, i, "scenarios", j);
+        scenarios[shift + j]  = campaingElement (*campaign, i, "scenarios", j);
         cities[cityShift + j] = campaingElement (*campaign, i, "cities", j);
       }
       if (i != 0) {
@@ -36,12 +36,12 @@ namespace ufsct {
 
   Chapter Campaign::operator[] (size_t const i) const {
     Chapter toRet;
-    size_t shift = i * 4;
-    size_t cityShift = (i == 0) ? 0 : (4 + 5 * (i - 1));
+    size_t  shift     = i * 4;
+    size_t  cityShift = (i == 0) ? 0 : (4 + 5 * (i - 1));
     for (size_t j = 0; j < 4; j++) {
       toRet.characters[j] = characters[shift + j];
-      toRet.scenarios[j] = scenarios[shift + j];
-      toRet.cities[j] = cities[cityShift + j];
+      toRet.scenarios[j]  = scenarios[shift + j];
+      toRet.cities[j]     = cities[cityShift + j];
     }
     if (i != 0) {
       toRet.cities[4] = cities[cityShift + 4];

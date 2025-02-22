@@ -15,9 +15,9 @@ namespace ufsct {
     std::iota (randomCitiesIDs.begin (), randomCitiesIDs.end (), 0);
     std::iota (randomScenariosIDs.begin (), randomScenariosIDs.end (), 0);
   };
-  Save::~Save () = default;
+  Save::~Save ()                       = default;
   Save &Save::operator= (const Save &) = default;
-  Save &Save::operator= (Save &&) = default;
+  Save &Save::operator= (Save &&)      = default;
   Save::Save (std::string_view cname) : Save () { name = cname; }
 
   std::string Save::getCampaignName () const { return name; }
@@ -95,17 +95,17 @@ namespace ufsct {
   template <typename T>
   T loadChapter (djson::Object chapter) {
     T toret;
-    toret.cityID = chapter.get<djson::Number> ("cityID");
-    toret.charID = chapter.get<djson::Number> ("charID");
-    toret.sceneID = chapter.get<djson::Number> ("sceneID");
-    auto tries = chapter.get<djson::Array> ("tries");
+    toret.cityID   = chapter.get<djson::Number> ("cityID");
+    toret.charID   = chapter.get<djson::Number> ("charID");
+    toret.sceneID  = chapter.get<djson::Number> ("sceneID");
+    auto tries     = chapter.get<djson::Array> ("tries");
     toret.tries[0] = tries.get<djson::Number> (0);
     toret.tries[1] = tries.get<djson::Number> (1);
     if constexpr (std::is_same_v<T, chapter2>) {
       toret.elitecharID = chapter.get<djson::Number> ("elitecharID1");
     }
     if constexpr (std::is_same_v<T, chapter3>) {
-      toret.elitecharID = chapter.get<djson::Number> ("elitecharID1");
+      toret.elitecharID  = chapter.get<djson::Number> ("elitecharID1");
       toret.elitecharID2 = chapter.get<djson::Number> ("elitecharID2");
     }
     return toret;
@@ -113,7 +113,7 @@ namespace ufsct {
 
   bool Save::load (std::string_view filename) {
     std::ifstream file (filename.data ());
-    auto saveRead = djson::read (file);
+    auto          saveRead = djson::read (file);
     if (!saveRead) {
       return false;
     }
@@ -133,19 +133,19 @@ namespace ufsct {
     auto history = saveRead->get<djson::Object> ("history");
     for (const auto &key : history.Keys ()) {
       if (key == "chapter1") {
-        auto tmp = history.get<djson::Array> ("chapter1");
+        auto tmp        = history.get<djson::Array> ("chapter1");
         firstChapter[0] = loadChapter<chapter1> (tmp.get<djson::Object> (0));
         if (tmp.size () > 1) {
           firstChapter[1] = loadChapter<chapter1> (tmp.get<djson::Object> (1));
         }
       } else if (key == "chapter2") {
-        auto tmp = history.get<djson::Array> ("chapter2");
+        auto tmp         = history.get<djson::Array> ("chapter2");
         secondChapter[0] = loadChapter<chapter2> (tmp.get<djson::Object> (0));
         if (tmp.size () > 1) {
           secondChapter[1] = loadChapter<chapter2> (tmp.get<djson::Object> (1));
         }
       } else if (key == "chapter3") {
-        auto tmp = history.get<djson::Array> ("chapter3");
+        auto tmp        = history.get<djson::Array> ("chapter3");
         thirdChapter[0] = loadChapter<chapter3> (tmp.get<djson::Object> (0));
         if (tmp.size () > 1) {
           thirdChapter[1] = loadChapter<chapter3> (tmp.get<djson::Object> (1));
@@ -171,8 +171,8 @@ namespace ufsct {
 
   djson::Object saveChapter (chapter1 c) {
     djson::Object toret;
-    toret["cityID"] = djson::Number (c.cityID);
-    toret["charID"] = djson::Number (c.charID);
+    toret["cityID"]  = djson::Number (c.cityID);
+    toret["charID"]  = djson::Number (c.charID);
     toret["sceneID"] = djson::Number (c.sceneID);
     toret["tries"] =
       djson::Array{{djson::Number (c.tries[0]), djson::Number (c.tries[1])}};
@@ -180,13 +180,13 @@ namespace ufsct {
   }
 
   djson::Object saveChapter (chapter2 c) {
-    auto toret = saveChapter (chapter1 (c));
+    auto toret            = saveChapter (chapter1 (c));
     toret["elitecharID1"] = djson::Number (c.elitecharID);
     return toret;
   }
 
   djson::Object saveChapter (chapter3 c) {
-    auto toret = saveChapter (chapter2 (c));
+    auto toret            = saveChapter (chapter2 (c));
     toret["elitecharID2"] = djson::Number (c.elitecharID2);
     return toret;
   }
@@ -230,7 +230,7 @@ namespace ufsct {
         team.emplace_back (djson::Number (victoryTeam[0]));
         team.emplace_back (djson::Number (victoryTeam[1]));
         team.emplace_back (djson::Number (victoryTeam[2]));
-        ch4["team"] = team;
+        ch4["team"]  = team;
         ch4["score"] = djson::Number (lastBattleScore);
       }
       djson::Array cities;
@@ -240,7 +240,7 @@ namespace ufsct {
         }
         cities.push_back (djson::Number (lastBattle[i]));
       }
-      ch4["cities"] = cities;
+      ch4["cities"]       = cities;
       history["chapter4"] = ch4;
     }
 
@@ -259,7 +259,7 @@ namespace ufsct {
         export_randomScenariosIDs[i] = djson::Number (randomScenariosIDs[i]);
       }
     }
-    save["randomCitiesIDs"] = std::move (export_randomCitiesIDs);
+    save["randomCitiesIDs"]    = std::move (export_randomCitiesIDs);
     save["randomCharacterIDs"] = std::move (export_randomCharacterIDs);
     save["randomScenariosIDs"] = std::move (export_randomScenariosIDs);
 

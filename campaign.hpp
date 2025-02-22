@@ -12,7 +12,7 @@ namespace ufsct {
     std::array<std::string, 5> cities;
   };
   class Campaign {
-    static constexpr size_t noc = 3;
+    static constexpr size_t     noc = 3;
     std::array<std::string, 12> characters;
     std::array<std::string, 12> scenarios;
     std::array<std::string, 14> cities;
