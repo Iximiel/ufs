@@ -317,16 +317,20 @@ public:
       std::cerr << "we have the data" << std::endl;
       return battleScoreMenu (screen);
     }
-    if (lastPreparedBattle < 1) {
+    if (lastPreparedBattleCompleted) {
+      // increment to go to the next round
+      lastPreparedBattle++;
+    }
+    if (lastPreparedBattle < 2) { // 0 1
       return battleChapterMenu<0> (screen);
     }
-    if (lastPreparedBattle < 3) {
+    if (lastPreparedBattle < 4) { // 2 6
       if (!lastPreparedBattleCompleted) {
         return battleScoreMenu (screen);
       }
       return battleChapterMenu<1> (screen);
     }
-    if (lastPreparedBattle < 5) {
+    if (lastPreparedBattle < 6) { // 4 5
       if (!lastPreparedBattleCompleted) {
         return battleScoreMenu (screen);
       }
@@ -675,7 +679,11 @@ public:
           backButton})});
 
     screen.Loop (Renderer (layout, [&] {
-      return mainGrid (hbox ({filler (), layout->Render (), filler ()}));
+      return mainGrid (vbox (
+        hbox (
+          {filler (), text ("Chapter " + std::to_string (chapter + 1)),
+           text ("Battle" + std::to_string (start / 2 + 1)), filler ()}),
+        hbox ({filler (), layout->Render (), filler ()})));
     }));
 
     if (goBack) {

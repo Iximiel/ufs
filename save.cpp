@@ -349,8 +349,20 @@ namespace ufsct {
       sceneID.begin (), sceneID.end (), randomScenariosIDs.begin () + 8);
   }
 
+  /// @brief  the ide of the last battle with stored settings:
+  ///
+  /// -1 is empty campaing, 6 is final battle
+  /// @return
   int Save::getLastBattlePrepared () const {
-    if (lastBattle[0] != -1) {
+    if (
+      lastBattle[0] != -1 ||
+      (thirdChapter[1].cityID != -1 &&
+       ( // won at first try
+         (thirdChapter[1].tries[0] != chapter1::NotFought &&
+          thirdChapter[1].tries[0] != chapter1::Fail) ||
+         // any outcome for second try
+         (thirdChapter[1].tries[0] != chapter1::NotFought &&
+          thirdChapter[1].tries[1] == chapter1::Fail)))) {
       return 6;
     }
     // find the "id" of the last prepared scenario by looking if the city has
@@ -460,13 +472,17 @@ namespace ufsct {
     // you should not be here
   }
   bool Save::lastBattleComplete () const {
+    if (thirdChapter[1].cityID == -1) {
+      // need the third chapter to be finished
+      return false;
+    }
     if (victoryTeam[0] != -1) {
       return true;
     }
-
-    auto survivedCities = getSurvivedCities ();
-    return survivedCities.size () !=
-           std::count (survivedCities.begin (), survivedCities.end (), -1);
+    auto sc = getSurvivedCities ();
+    // if no ID are present then the campaign is over
+    return std::all_of (
+      sc.begin (), sc.end (), [] (auto a) { return a != -1; });
   }
 
   chapter4Report Save::getChapter4Results () const {
