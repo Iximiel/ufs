@@ -103,7 +103,7 @@ class UnderFallingSkiesTracker {
     Elements Cities;
     auto     ch4 = playerdata.getChapter4Results ();
 
-    for (auto city : ch4) {
+    for (auto city : ch4.battles) {
       if (city.cityID > -1) {
         std::string cityName = campaign.getCity (city.cityID);
         std::string points   = [] (int p) -> std::string {
@@ -122,6 +122,16 @@ class UnderFallingSkiesTracker {
       }
     }
 
+    if (ch4.victoryTeam[0] != -1) {
+      Cities.push_back (window (
+        text ("Victory Team"),
+        vbox (
+          text (campaign.getCharacter (ch4.victoryTeam[0])),
+          text (campaign.getCharacter (ch4.victoryTeam[1])),
+          text (campaign.getCharacter (ch4.victoryTeam[2])))));
+    }
+    Cities.push_back (window (
+      text ("Final Score"), text (std::to_string (ch4.score)) | center));
     return vbox (Cities);
   }
 

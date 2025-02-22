@@ -26,9 +26,15 @@ namespace ufsct {
 
   struct chapter3 : public chapter1 {};
 
-  struct chapter4Report {
+  struct chapter4battle {
     int cityID        = -1;
     int battleOutcome = chapter1::NotFought;
+  };
+
+  struct chapter4Report {
+    std::array<chapter4battle, 8> battles;
+    int                           score = 0;
+    std::array<int, 3>            victoryTeam{-1, -1, -1};
   };
 
   class Save {
@@ -50,10 +56,14 @@ namespace ufsct {
     Save &operator= (const Save &);
     Save &operator= (Save &&);
     ~Save ();
-    bool               load (std::string_view);
-    bool               save (std::string_view);
+    bool        load (std::string_view);
+    bool        save (std::string_view);
+    std::string getCampaignName () const;
+
     std::array<int, 8> getSurvivedCities () const;
-    std::string        getCampaignName () const;
+
+    chapter4Report getChapter4Results () const;
+
     // this gets  generally chapter
     chapter3 getChapter (int chapter, int battle);
     void     setTry (int chapter, int battle, int tryNumber, int difficulty);

@@ -469,27 +469,29 @@ namespace ufsct {
            std::count (survivedCities.begin (), survivedCities.end (), -1);
   }
 
-  std::array<chapter4Report, 8> Save::getChapter4Results () const {
+  chapter4Report Save::getChapter4Results () const {
     std::cerr << "getChapter4Results" << std::endl;
-    std::array<chapter4Report, 8> toret;
+    chapter4Report toret;
     // we put the battles that have been fought first
     std::vector<int> citiesDone;
     citiesDone.reserve (8);
-
+    toret.score       = lastBattleScore;
     int currentBattle = 0;
     for (auto i = 0u; i < lastBattle.size (); i++) {
       if (lastBattle[i] == -1) {
         break;
       }
-      toret[currentBattle].cityID = lastBattle[i];
+      toret.battles[currentBattle].cityID = lastBattle[i];
       citiesDone.push_back (lastBattle[i]);
       if (currentBattle > 0) {
         // if anohter battle has been fought, measn the previous city is lost
-        toret[currentBattle - 1].battleOutcome = -1;
+        toret.battles[currentBattle - 1].battleOutcome = -1;
+        --toret.score;
       }
-      toret[currentBattle].battleOutcome = lastBattleScore;
+      toret.battles[currentBattle].battleOutcome = lastBattleScore;
       std::cerr << "currentBattle: " << currentBattle
-                << " city: " << toret[currentBattle].cityID << std::endl;
+                << " city: " << toret.battles[currentBattle].cityID
+                << std::endl;
       ++currentBattle;
     }
 
@@ -502,14 +504,38 @@ namespace ufsct {
         std::find (citiesDone.begin (), citiesDone.end (), survivedCities[i]) ==
         citiesDone.end ()) {
         std::cerr << "currentBattle: " << currentBattle
-                  << " city: " << toret[currentBattle].cityID << std::endl;
-        toret[currentBattle].cityID = survivedCities[i];
+                  << " city: " << toret.battles[currentBattle].cityID
+                  << std::endl;
+        toret.battles[currentBattle].cityID = survivedCities[i];
         // battle outcomoe is by default not fought
         ++currentBattle;
       }
     }
+    toret.victoryTeam = victoryTeam;
+
     std::cerr << "readytoret\n";
-    // TODO: final score
+
+    // and then we reduce the score fore ach lost battle, and we add the score
+    // for each won battle
+
+    // oop on the battles
+    for (int i = 0; i < 2; ++i) {
+      // the first try is either a -1 or the difficulty
+      toret.score += firstChapter[i].tries[0];
+      toret.score += secondChapter[i].tries[0];
+      toret.score += thirdChapter[i].tries[0];
+      // the second try should be skipped if is  not fought (in the oher case is
+      // -1 or the score)
+      if (firstChapter[i].tries[1] != chapter1::NotFought) {
+        toret.score += firstChapter[i].tries[1];
+      }
+      if (secondChapter[i].tries[1] != chapter1::NotFought) {
+        toret.score += secondChapter[i].tries[1];
+      }
+      if (thirdChapter[i].tries[1] != chapter1::NotFought) {
+        toret.score += thirdChapter[i].tries[1];
+      }
+    }
     return toret;
   }
 
