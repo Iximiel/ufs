@@ -92,7 +92,37 @@ class UnderFallingSkiesTracker {
 
   ftxui::Element finalChapterSummary () {
     using namespace ftxui;
-    return vbox (text ("wip"));
+    // to future me [](){} == []{}
+    auto pointsquare = [] (const std::string &s, int sizeVal) {
+      // the plus 2 is arbitrayr to make it look a square, may depend on the
+      // font
+      return text (s) | center | size (WIDTH, EQUAL, 2 + sizeVal) |
+             size (HEIGHT, EQUAL, sizeVal) | border;
+    };
+
+    Elements Cities;
+    auto     ch4 = playerdata.getChapter4Results ();
+
+    for (auto city : ch4) {
+      if (city.cityID > -1) {
+        std::string cityName = campaign.getCity (city.cityID);
+        std::string points   = [] (int p) -> std::string {
+          if (p == ufsct::chapter1::NotFought) {
+            return " ";
+          }
+          if (p == ufsct::chapter1::Fail) {
+            return "X";
+          }
+          return std::to_string (p);
+        }(city.battleOutcome);
+        Cities.push_back (hbox (
+          text ("City:") | vcenter | size (WIDTH, EQUAL, 8), separator (),
+          text (cityName) | size (WIDTH, EQUAL, 18) | vcenter,
+          pointsquare (points, 1)));
+      }
+    }
+
+    return vbox (Cities);
   }
 
 public:

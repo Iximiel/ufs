@@ -26,6 +26,11 @@ namespace ufsct {
 
   struct chapter3 : public chapter1 {};
 
+  struct chapter4Report {
+    int cityID        = -1;
+    int battleOutcome = chapter1::NotFought;
+  };
+
   class Save {
     std::string             name;
     std::array<chapter1, 2> firstChapter;

@@ -469,4 +469,48 @@ namespace ufsct {
            std::count (survivedCities.begin (), survivedCities.end (), -1);
   }
 
+  std::array<chapter4Report, 8> Save::getChapter4Results () const {
+    std::cerr << "getChapter4Results" << std::endl;
+    std::array<chapter4Report, 8> toret;
+    // we put the battles that have been fought first
+    std::vector<int> citiesDone;
+    citiesDone.reserve (8);
+
+    int currentBattle = 0;
+    for (auto i = 0u; i < lastBattle.size (); i++) {
+      if (lastBattle[i] == -1) {
+        break;
+      }
+      toret[currentBattle].cityID = lastBattle[i];
+      citiesDone.push_back (lastBattle[i]);
+      if (currentBattle > 0) {
+        // if anohter battle has been fought, measn the previous city is lost
+        toret[currentBattle - 1].battleOutcome = -1;
+      }
+      toret[currentBattle].battleOutcome = lastBattleScore;
+      std::cerr << "currentBattle: " << currentBattle
+                << " city: " << toret[currentBattle].cityID << std::endl;
+      ++currentBattle;
+    }
+
+    auto survivedCities = getSurvivedCities ();
+    for (auto i = 0u; i < survivedCities.size (); i++) {
+      if (survivedCities[i] == -1) {
+        break;
+      }
+      if (
+        std::find (citiesDone.begin (), citiesDone.end (), survivedCities[i]) ==
+        citiesDone.end ()) {
+        std::cerr << "currentBattle: " << currentBattle
+                  << " city: " << toret[currentBattle].cityID << std::endl;
+        toret[currentBattle].cityID = survivedCities[i];
+        // battle outcomoe is by default not fought
+        ++currentBattle;
+      }
+    }
+    std::cerr << "readytoret\n";
+    // TODO: final score
+    return toret;
+  }
+
 } // namespace ufsct
