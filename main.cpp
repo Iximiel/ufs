@@ -31,6 +31,70 @@ class UnderFallingSkiesTracker {
     campaignName = "Campaign name";
   }
 
+  ftxui::Element chapterSummary (int chapter) {
+    using namespace ftxui;
+    std::array<Element, 2> bt;
+    for (int battle = 0; battle < 2; battle++) {
+      auto        tdata        = playerdata.getChapter (chapter, battle);
+      std::string charName     = campaign.getCharacter (tdata.charID);
+      std::string scenarioName = campaign.getScenario (tdata.sceneID);
+      std::string cityName     = campaign.getCity (tdata.cityID);
+      Elements    data         = {};
+      std::string try1         = "X";
+      std::string try2         = "X";
+      bool        destroyed    = tdata.tries[0] == ufsct::chapter1::Fail &&
+                       tdata.tries[1] == ufsct::chapter1::Fail;
+      if (!destroyed) {
+        if (tdata.tries[0] == ufsct::chapter1::Fail) {
+          try2 = std::to_string (tdata.tries[1]);
+        } else {
+          try1 = std::to_string (tdata.tries[0]);
+          try2 = " ";
+        }
+      }
+      auto pointsquare = [] (const std::string &s, int sizeVal) {
+        // the plus 2 is arbitrayr to make it look a square, may depend on the
+        // font
+        return text (s) | center | size (WIDTH, EQUAL, 2 + sizeVal) |
+               size (HEIGHT, EQUAL, sizeVal) | border;
+      };
+
+      auto category = [] (const std::string &s) {
+        return text (s) | vcenter | size (WIDTH, EQUAL, 11);
+      };
+
+      data.push_back (hbox (
+        category ("City:"), separator (), paragraph (cityName) | vcenter,
+        pointsquare (try1, 1), pointsquare (try2, 1)));
+      data.push_back (hbox (
+        category ("Scenario:"), separator (),
+        paragraph (scenarioName) | vcenter));
+      data.push_back (hbox (
+        category ("Character:"), separator (), text (charName) | vcenter));
+
+      if (chapter > 0) {
+        data.push_back (hbox (
+          category ("Elite:"), separator (),
+          text (campaign.getCharacter (tdata.elitecharID)) | vcenter));
+      }
+      if (chapter > 1) {
+        data.push_back (hbox (
+          category ("Elite:"), separator (),
+          text (campaign.getCharacter (tdata.elitecharID)) | vcenter));
+      }
+
+      bt[battle] = vbox (data);
+    }
+    return hbox (
+      bt[0] | size (WIDTH, EQUAL, 40) | border,
+      bt[1] | size (WIDTH, EQUAL, 40) | border);
+  }
+
+  ftxui::Element finalChapterSummary () {
+    using namespace ftxui;
+    return vbox (text ("wip"));
+  }
+
 public:
   enum class navigation {
     ufsMain,
@@ -232,56 +296,38 @@ public:
   }
 
   navigation summaryMenu (ftxui::ScreenInteractive &screen) {
+    std::cerr << "summaryMenu" << std::endl;
     using namespace ftxui;
-    auto close          = screen.ExitLoopClosure ();
-    auto backButton     = Button ("Exit", [&] { close (); });
-    auto activeElements = Container::Horizontal ({backButton});
-    std::array<Element, 3> ch;
-    for (int chapter = 0; chapter < 3; chapter++) {
-      std::array<Element, 2> bt;
-      for (int battle = 0; battle < 2; battle++) {
-        auto        tdata        = playerdata.getChapter (chapter, battle);
-        std::string charName     = campaign.getCharacter (tdata.charID);
-        std::string scenarioName = campaign.getScenario (tdata.sceneID);
-        std::string cityName     = campaign.getCity (tdata.cityID);
-        Elements    data         = {};
+    auto close      = screen.ExitLoopClosure ();
+    auto backButton = Button ("Exit", [&] { close (); });
 
-        data.push_back (text ("City: " + cityName));
-        data.push_back (text ("Scenario: " + scenarioName));
-        data.push_back (text ("Character: " + charName));
+    std::array<Element, 3>   ch;
+    int                      chselected = 0;
+    std::vector<std::string> chstr      = {
+      "Chapter 1",
+      "Chapter 2",
+      "Chapter 3",
+      "Chapter 4",
+    };
 
-        if (chapter > 0) {
-          data.push_back (
-            text ("Elite: " + campaign.getCharacter (tdata.elitecharID)));
-        }
-        if (chapter > 1) {
-          data.push_back (
-            text ("Elite: " + campaign.getCharacter (tdata.elitecharID2)));
-        }
-        int score = tdata.tries[0];
-        if (
-          score == ufsct::chapter1::Fail &&
-          tdata.tries[1] != ufsct::chapter1::Fail) {
-          // half for the character, half for the damaged city
-          score = tdata.tries[1] - 1;
-        } else if (
-          score == ufsct::chapter1::Fail &&
-          tdata.tries[1] == ufsct::chapter1::Fail) {
-          score = 0;
-        }
-        data.push_back (text ("Score: " + std::to_string (score)));
-        bt[battle] = vbox (data);
+    auto tab_menu      = Menu (&chstr, &chselected);
+    auto tab_container = Container::Tab (
+      {Renderer ([&] { return chapterSummary (0); }),
+       Renderer ([&] { return chapterSummary (1); }),
+       Renderer ([&] { return chapterSummary (2); }),
+       Renderer ([&] { return finalChapterSummary (); })},
+      &chselected);
 
-        ch[chapter] = window (
-          text ("Chapter " + std::to_string (chapter + 1)),
-          hbox (bt[0] | border, bt[1] | border));
-      }
-    }
+    auto activeElements =
+      Container::Horizontal ({tab_menu, tab_container, backButton});
+
+    std::cerr << "Loop\n";
     screen.Loop (Renderer (activeElements, [&] {
       return mainGrid (hbox (
         {filler (),
          hbox (
-           vbox (ch[0], ch[1], ch[2]) | yframe,
+           hbox (tab_menu->Render (), separator (), tab_container->Render ()),
+           //  vbox (ch[0], ch[1], ch[2]) | yframe,
            vbox (filler (), backButton->Render ())),
          filler ()}));
     }));
