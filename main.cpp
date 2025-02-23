@@ -3,6 +3,7 @@
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 
+#include <cassert>
 #include <filesystem>
 #include <iostream>
 #include <random>
@@ -31,10 +32,10 @@ class UnderFallingSkiesTracker {
     campaignName = "Campaign name";
   }
 
-  ftxui::Element chapterSummary (int chapter) {
+  ftxui::Element chapterSummary (unsigned chapter) {
     using namespace ftxui;
     std::array<Element, 2> bt;
-    for (int battle = 0; battle < 2; battle++) {
+    for (unsigned battle = 0; battle < 2; battle++) {
       auto        tdata        = playerdata.getChapter (chapter, battle);
       std::string charName     = campaign.getCharacter (tdata.charID);
       std::string scenarioName = campaign.getScenario (tdata.sceneID);
@@ -46,9 +47,9 @@ class UnderFallingSkiesTracker {
                        tdata.tries[1] == ufsct::chapter1::Fail;
       if (!destroyed) {
         if (tdata.tries[0] == ufsct::chapter1::Fail) {
-          try2 = std::to_string (tdata.tries[1]);
+          try2 = std::to_string (static_cast<int> (tdata.tries[1]));
         } else {
-          try1 = std::to_string (tdata.tries[0]);
+          try1 = std::to_string (static_cast<int> (tdata.tries[0]));
           try2 = " ";
         }
       }
@@ -223,7 +224,7 @@ public:
     bool doSave     = false;
     auto openButton = Button ("Save", [&] {
       // change
-      auto selected = FileAndDirs[selection2];
+      auto selected = FileAndDirs[static_cast<unsigned> (selection2)];
 
       if (visual != path.string ()) {
         if (!std::filesystem::is_directory (visual)) {
@@ -244,7 +245,7 @@ public:
     });
 
     option.on_enter = [&] {
-      auto selected = FileAndDirs[selection2];
+      auto selected = FileAndDirs[static_cast<unsigned> (selection2)];
       if (selected == "..") {
         path = path.parent_path ();
       } else {
@@ -256,7 +257,9 @@ public:
       close ();
     };
 
-    option.on_change = [&] { auto selected = FileAndDirs[selection2]; };
+    option.on_change = [&] {
+      auto selected = FileAndDirs[static_cast<unsigned> (selection2)];
+    };
 
     auto dirMenu       = Menu (&FileAndDirs, &selection2, option);
     auto filenameInput = Input (&visual);
@@ -382,7 +385,6 @@ public:
     using namespace ftxui;
     std::cerr << "finalBattle" << std::endl;
     bool goBack             = false;
-    bool next               = false;
     bool win                = false;
     bool charactersSelected = false;
     bool citySeleceted      = false;
@@ -419,7 +421,7 @@ public:
       ready = charactersSelected && citySeleceted;
     };
     auto characters = Container::Vertical ({});
-    for (int i = 0; i < elitesChoiceIDs.size (); i++) {
+    for (unsigned i = 0; i < elitesChoiceIDs.size (); i++) {
       elitesChoice[i] = false;
       characters->Add (Checkbox (
         campaign.getCharacter (elitesChoiceIDs[i]), &elitesChoice[i],
@@ -436,7 +438,7 @@ public:
         std::count (citiesChoice.begin (), citiesChoice.end (), true) == 1;
       ready = charactersSelected && citySeleceted;
     };
-    for (int i = 0; i < citiesChoiceIDs.size (); i++) {
+    for (unsigned i = 0; i < citiesChoiceIDs.size (); i++) {
       citiesChoice[i] = false;
       if (citiesChoiceIDs[i] != -1) {
         cities->Add (Checkbox (
@@ -466,31 +468,32 @@ public:
     }
 
     std::cerr << "\t>";
-    for (int i = 0; i < citiesChoice.size (); i++) {
+    for (unsigned i = 0; i < citiesChoice.size (); i++) {
       std::cerr << citiesChoice[i] << std::flush;
     }
     std::cerr << "\n";
     std::cerr << "\t>";
-    for (int i = 0; i < citiesChoiceIDs.size (); i++) {
+    for (unsigned i = 0; i < citiesChoiceIDs.size (); i++) {
       std::cerr << citiesChoiceIDs[i] << " " << std::flush;
     }
     std::cerr << "\n";
-    auto city = citiesChoiceIDs
-      [std::find (citiesChoice.begin (), citiesChoice.end (), true) -
-       citiesChoice.begin ()];
+    // if there is not a true value here something is wrong in the UI
+    unsigned city = citiesChoiceIDs[static_cast<unsigned> (
+      std::find (citiesChoice.begin (), citiesChoice.end (), true) -
+      citiesChoice.begin ())];
     std::cerr << "city: " << city << std::endl;
     if (win) {
       std::cerr << "Win: " << battlescore << std::endl;
       std::cerr << "In" << campaign.getCity (city) << std::endl;
       std::array<int, 3> team;
-      for (int i = 0, k = 0; i < elitesChoice.size (); i++) {
+      for (unsigned i = 0, k = 0; i < elitesChoice.size (); i++) {
         if (elitesChoice[i]) {
           team[k] = elitesChoiceIDs[i];
           std::cerr << "\t" << campaign.getCharacter (team[k]) << std::endl;
           ++k;
         }
       }
-      auto score = std::stoi (battlescore);
+      int score = std::stoi (battlescore);
       playerdata.endCampaign (city, score, team);
       playerdata.save (file);
       return navigation::ufsBattle;
@@ -523,10 +526,11 @@ public:
       close ();
     });
     // determine which battle have been prepared
-    int lastPreparedBattle = playerdata.getLastBattlePrepared ();
+    unsigned lastPreparedBattle =
+      static_cast<unsigned> (playerdata.getLastBattlePrepared ());
     std::cerr << "lastPreparedBattle: " << lastPreparedBattle << std::endl;
     // determine if the last battle has been fought
-    int chapter = lastPreparedBattle / 2;
+    unsigned chapter = lastPreparedBattle / 2;
     std::cerr << "chapter: " << chapter << std::endl;
     auto        tdata = playerdata.getChapter (chapter, lastPreparedBattle % 2);
     std::string charName     = campaign.getCharacter (tdata.charID);
@@ -581,24 +585,24 @@ public:
     return navigation::ufsBattle;
   }
 
-  template <int chapter>
+  template <unsigned chapter>
   navigation battleChapterMenu (ftxui::ScreenInteractive &screen) {
     using namespace ftxui;
     std::cerr << "battleChapter" << chapter + 1 << "Menu" << std::endl;
     bool goBack = false;
     // in case of fisrt chapter the lamba of che checkob is never explored
-    bool ready      = chapter == 0;
-    auto close      = screen.ExitLoopClosure ();
-    auto backButton = Button ("Exit", [&] {
+    bool     ready      = chapter == 0;
+    auto     close      = screen.ExitLoopClosure ();
+    auto     backButton = Button ("Exit", [&] {
       goBack = true;
       close ();
     });
-    int  start      = 0;
+    unsigned start      = 0;
     if (playerdata.getChapter (chapter, 0).charID != -1) {
       start = 2;
       std::cerr << "second battle" << std::endl;
     }
-    int chosenID = -1;
+    int selectionID = -1;
 
     if (start == 0) {
       constexpr int      base   = 4 * chapter;
@@ -620,14 +624,14 @@ public:
     }
     Components setbttn (2);
     Elements   battleChoice;
-    for (int i = 0; i < 2; i++) {
-      const int mychoice = i + start;
+    for (unsigned i = 0; i < 2; i++) {
+      const unsigned mychoice = i + start;
       std::cerr << i << "(" << mychoice << ")" << std::endl;
       setbttn[i] = Maybe (
         Button (
           "Set " + std::to_string (i + 1),
-          [&chosenID, &close, mychoice] {
-            chosenID = mychoice;
+          [&selectionID, &close, mychoice] {
+            selectionID = static_cast<int> (mychoice);
             close ();
           }),
         &ready);
@@ -655,13 +659,13 @@ public:
     auto           elitesChoiceIDs = playerdata.getPossibleElites (chapter);
     std::array<bool, 2 * chapter> elitesChoice;
     elitesch.on_change = [&] {
-      int choices =
+      auto choicesCount =
         std::count (elitesChoice.begin (), elitesChoice.end (), true);
-      ready = choices == chapter;
+      ready = choicesCount == chapter;
     };
     if constexpr (chapter > 0) {
       auto elites = Container::Vertical ({});
-      for (int i = 0; i < elitesChoiceIDs.size (); i++) {
+      for (unsigned i = 0; i < elitesChoiceIDs.size (); i++) {
         std::cerr << "\tElite:" << elitesChoiceIDs[i] << std::endl;
         elitesChoice[i] = false;
         elites->Add (Checkbox (
@@ -691,6 +695,8 @@ public:
     }
     // so that becames 1 or 0
     start /= 2;
+    assert (selectionID >= 0);
+    unsigned chosenID = static_cast<unsigned> (selectionID);
     std::cerr << "chosenID  : " << chosenID << std::endl;
     std::cerr << "charID    : "
               << playerdata.getRandomCharacterID (chapter, chosenID) << "\n";
@@ -698,7 +704,7 @@ public:
               << playerdata.getRandomScenarioID (chapter, chosenID) << "\n";
     std::cerr << "cityID    : "
               << playerdata.getRandomCityID (chapter, chosenID) << "\n";
-    for (int i = 0; i < chapter; i++) {
+    for (unsigned i = 0; i < chapter; i++) {
       if (elitesChoice[i]) {
         std::cerr << "eliteID   : " << elitesChoiceIDs[i] << "\n";
       }
@@ -717,7 +723,7 @@ public:
         playerdata.getRandomScenarioID (chapter, chosenID);
       playerdata.getSecondChapter (start).cityID =
         playerdata.getRandomCityID (chapter, chosenID);
-      for (int i = 0; i < 2; i++) {
+      for (unsigned i = 0; i < 2; i++) {
         std::cerr << i << ":" << elitesChoice[i] << "->" << elitesChoiceIDs[i]
                   << std::endl;
         if (elitesChoice[i]) {
@@ -731,7 +737,7 @@ public:
         playerdata.getRandomScenarioID (chapter, chosenID);
       playerdata.getThirdChapter (start).cityID =
         playerdata.getRandomCityID (chapter, chosenID);
-      int i = 0;
+      unsigned i = 0;
       for (i = 0; i < 4; i++) {
         std::cerr << i << ":" << elitesChoice[i] << "->" << elitesChoiceIDs[i]
                   << std::endl;
@@ -780,7 +786,7 @@ public:
         "Open",
         [&] {
           // change
-          auto selected = FileAndDirs[selection2];
+          auto selected = FileAndDirs[static_cast<unsigned> (selection2)];
           if (selected == "..") {
             path = path.parent_path ();
           } else {
@@ -804,7 +810,7 @@ public:
     });
 
     option.on_enter = [&] {
-      auto selected = FileAndDirs[selection2];
+      auto selected = FileAndDirs[static_cast<unsigned> (selection2)];
       readyToLoad   = false;
       if (selected == "..") {
         path   = path.parent_path ();
@@ -822,7 +828,7 @@ public:
     };
 
     option.on_change = [&] {
-      auto selected = FileAndDirs[selection2];
+      auto selected = FileAndDirs[static_cast<unsigned> (selection2)];
       readyToLoad   = !std::filesystem::is_directory (path / selected);
     };
 

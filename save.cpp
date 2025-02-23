@@ -23,7 +23,7 @@ namespace ufsct {
 
   std::string Save::getCampaignName () const { return name; }
 
-  chapter3 Save::getChapter (int chapter, int battle) {
+  chapter3 Save::getChapter (unsigned const chapter, unsigned const battle) {
     switch (chapter) {
     case 0:
       return chapter3 (firstChapter.at (battle));
@@ -40,7 +40,8 @@ namespace ufsct {
     return chapter3 ();
   }
 
-  void Save::setTry (int chapter, int battle, int tryNumber, int difficulty) {
+  void Save::setTry (
+    unsigned chapter, unsigned battle, int tryNumber, int difficulty) {
     switch (chapter) {
     case 0:
       firstChapter.at (battle).tries[tryNumber] = difficulty;
@@ -56,31 +57,32 @@ namespace ufsct {
     }
   }
 
-  chapter1 &Save::getFirstChapter (int const battle) {
+  chapter1 &Save::getFirstChapter (unsigned const battle) {
     return firstChapter.at (battle);
   }
-  chapter2 &Save::getSecondChapter (int const battle) {
+  chapter2 &Save::getSecondChapter (unsigned const battle) {
     return secondChapter.at (battle);
   }
-  chapter3 &Save::getThirdChapter (int const battle) {
+  chapter3 &Save::getThirdChapter (unsigned const battle) {
     return thirdChapter.at (battle);
   }
 
-  const chapter1 &Save::getFirstChapter (int const battle) const {
+  const chapter1 &Save::getFirstChapter (unsigned const battle) const {
     return firstChapter.at (battle);
   }
-  const chapter2 &Save::getSecondChapter (int const battle) const {
+  const chapter2 &Save::getSecondChapter (unsigned const battle) const {
     return secondChapter.at (battle);
   }
-  const chapter3 &Save::getThirdChapter (int const battle) const {
+  const chapter3 &Save::getThirdChapter (unsigned const battle) const {
     return thirdChapter.at (battle);
   }
 
-  int Save::getRandomCharacterID (int const ch, int const index) const {
+  int Save::getRandomCharacterID (
+    unsigned const ch, unsigned const index) const {
     assert (("character index should be less than 4", index < 4));
     return randomCharacterIDs.at (4 * ch + index);
   }
-  int Save::getRandomCityID (int const ch, int const index) const {
+  int Save::getRandomCityID (unsigned const ch, unsigned const index) const {
     if (ch == 0) {
       assert (("(ch1) city index should be less than 4", index < 4));
       return randomCitiesIDs.at (index);
@@ -88,7 +90,8 @@ namespace ufsct {
     assert (("city index should be less than 5", index < 5));
     return randomCitiesIDs.at (4 + 5 * (ch - 1) + index);
   }
-  int Save::getRandomScenarioID (int const ch, int const index) const {
+  int Save::getRandomScenarioID (
+    unsigned const ch, unsigned const index) const {
     assert (("scenario index should be less than 4", index < 4));
     return randomScenariosIDs.at (4 * ch + index);
   }
@@ -280,8 +283,8 @@ namespace ufsct {
     return -1;
   }
 
-  std::array<int, 8> Save::getSurvivedCities () const {
-    std::array<int, 8> toret;
+  std::array<validId, 8> Save::getSurvivedCities () const {
+    std::array<validId, 8> toret;
     toret[0] = citySurvived (firstChapter[0]);
     toret[1] = citySurvived (firstChapter[1]);
     toret[2] = citySurvived (secondChapter[0]);
@@ -447,7 +450,7 @@ namespace ufsct {
     return toret;
   }
 
-  void Save::endCampaign (int city, int score, std::array<int, 3> &team) {
+  void Save::endCampaign (unsigned city, int score, std::array<int, 3> &team) {
     // thisf functin assingthe city id to the first -1 in the lastBattle array
     // in the score menu the last battle has the signigicance of being the
     // victory city here
@@ -460,7 +463,7 @@ namespace ufsct {
     lastBattleScore = score;
   }
 
-  void Save::chapter4BattleLost (int city) {
+  void Save::chapter4BattleLost (unsigned city) {
     std::cerr << "chapter4BattleLost" << std::endl;
     std::cerr << "city: " << city << std::endl;
     auto it = std::find (lastBattle.begin (), lastBattle.end (), -1);
@@ -554,6 +557,10 @@ namespace ufsct {
       }
     }
     return toret;
+  }
+
+  std::ostream &operator<< (std::ostream &os, validId const &id) {
+    return os << id.ID;
   }
 
 } // namespace ufsct

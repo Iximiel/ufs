@@ -1,23 +1,62 @@
 #ifndef UFSCT_SAVE_H
 #define UFSCT_SAVE_H
 #include <array>
+#include <cassert>
+#include <concepts>
+#include <iosfwd>
 #include <span>
 #include <string>
 #include <string_view>
 #include <vector>
+
 namespace ufsct {
+
+  // this class is not a "good idea", I think: is just a way for me to not write
+  // static_cast over and over again.
+  // I am doing this for fun an for learning something, so losing some thine
+  // might be useful
+  class validId {
+  private:
+    int ID = -1;
+
+  public:
+    validId () = default;
+    validId (std::integral auto id) : ID{static_cast<int> (id)} {}
+    operator int () const { return ID; }
+    operator size_t () const {
+      // this is bold
+      assert (ID >= 0);
+      return static_cast<size_t> (ID);
+    }
+    operator unsigned () const {
+      // this is bold
+      assert (ID >= 0);
+      return static_cast<unsigned> (ID);
+    }
+    operator double () const { return static_cast<double> (ID); }
+    auto operator<=> (validId const &other) const { return ID <=> other.ID; };
+    bool operator== (std::integral auto const &other) const {
+      return ID == static_cast<int> (other);
+    };
+    bool operator!= (std::integral auto const &other) const {
+      return ID != static_cast<int> (other);
+    };
+    friend std::ostream &operator<< (std::ostream &os, validId const &id);
+  };
+
+  std::ostream &operator<< (std::ostream &os, validId const &id);
 
   struct chapter1 {
     constexpr static int NotFought = -2;
     constexpr static int Fail      = -1;
     // The tries can have 3 states: NotFought, Fail, value difficulty in case of
     // victory
-    std::array<int, 2> tries        = {NotFought, NotFought};
-    int                cityID       = -1;
-    int                charID       = -1;
-    int                sceneID      = -1;
-    int                elitecharID  = -1;
-    int                elitecharID2 = -1;
+    std::array<validId, 2> tries        = {NotFought, NotFought};
+    validId                cityID       = -1;
+    validId                charID       = -1;
+    validId                sceneID      = -1;
+    validId                elitecharID  = -1;
+    validId                elitecharID2 = -1;
   };
 
   // this is an experiment to use same data with different types, I do not know
@@ -34,7 +73,8 @@ namespace ufsct {
   struct chapter4Report {
     std::array<chapter4battle, 8> battles;
     int                           score = 0;
-    std::array<int, 3>            victoryTeam{-1, -1, -1};
+
+    std::array<int, 3> victoryTeam{-1, -1, -1};
   };
 
   class Save {
@@ -60,29 +100,30 @@ namespace ufsct {
     bool        save (std::string_view);
     std::string getCampaignName () const;
 
-    std::array<int, 8> getSurvivedCities () const;
+    std::array<validId, 8> getSurvivedCities () const;
 
     chapter4Report getChapter4Results () const;
 
     // this gets  generally chapter
-    chapter3 getChapter (int chapter, int battle);
-    void     setTry (int chapter, int battle, int tryNumber, int difficulty);
+    chapter3 getChapter (unsigned chapter, unsigned battle);
+    void
+    setTry (unsigned chapter, unsigned battle, int tryNumber, int difficulty);
 
-    const chapter1 &getFirstChapter (int battle) const;
-    const chapter2 &getSecondChapter (int battle) const;
-    const chapter3 &getThirdChapter (int battle) const;
-    chapter1       &getFirstChapter (int battle);
-    chapter2       &getSecondChapter (int battle);
-    chapter3       &getThirdChapter (int battle);
+    const chapter1 &getFirstChapter (unsigned battle) const;
+    const chapter2 &getSecondChapter (unsigned battle) const;
+    const chapter3 &getThirdChapter (unsigned battle) const;
+    chapter1       &getFirstChapter (unsigned battle);
+    chapter2       &getSecondChapter (unsigned battle);
+    chapter3       &getThirdChapter (unsigned battle);
 
     int  getLastBattlePrepared () const;
     bool calculateBattle (int scenario) const;
 
-    int getRandomCharacterID (int ch, int index) const;
-    int getRandomCityID (int ch, int index) const;
-    int getRandomScenarioID (int ch, int index) const;
+    int getRandomCharacterID (unsigned ch, unsigned index) const;
+    int getRandomCityID (unsigned ch, unsigned index) const;
+    int getRandomScenarioID (unsigned ch, unsigned index) const;
     // a lazy way to write less code in the UI:
-    template <int chapter, int cityDim>
+    template <unsigned chapter, unsigned cityDim>
     void setChapter (
       std::span<int, cityDim> citiesID,
       std::span<int, 4>       charID,
@@ -110,8 +151,8 @@ namespace ufsct {
       std::span<int, 4> charID,
       std::span<int, 4> sceneID);
     std::vector<int> getPossibleElites (int chapter) const;
-    void endCampaign (int city, int score, std::array<int, 3> &team);
-    void chapter4BattleLost (int city);
+    void endCampaign (unsigned city, int score, std::array<int, 3> &team);
+    void chapter4BattleLost (unsigned city);
     bool lastBattleComplete () const;
   };
 
