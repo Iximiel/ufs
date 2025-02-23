@@ -25,6 +25,37 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(ftxui)
 
 add_executable(UFSCampaignTracker main.cpp utils.cpp campaign.cpp save.cpp)
+
+# this is a 3.24 thing set_property(TARGET UFSCampaignTracker PROPERTY
+# COMPILE_WARNING_AS_ERROR ON)
+if(MSVC)
+  target_compile_options(UFSCampaignTracker PRIVATE /W4 /WX)
+else()
+  target_compile_options(
+    UFSCampaignTracker
+    PRIVATE -Wall
+            -Wextra
+            -Wshadow
+            -Wnon-virtual-dtor
+            -Wold-style-cast
+            -Wcast-align
+            -Wunused
+            -Woverloaded-virtual
+            -Wpedantic
+            -Wconversion
+            -Wsign-conversion
+            -Wnull-dereference
+            -Wdouble-promotion
+            -Wformat=2
+            -Wduplicated-cond
+            -Wduplicated-branches
+            -Wlogical-op
+            -Wuseless-cast
+            -Werror
+            # -Wlifetime
+  )
+endif()
+
 target_link_libraries(
   UFSCampaignTracker
   PRIVATE Djson::Djson
