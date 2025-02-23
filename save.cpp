@@ -4,6 +4,7 @@
 #include "djson/json_write.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <fstream>
 #include <numeric>
 
@@ -76,19 +77,19 @@ namespace ufsct {
   }
 
   int Save::getRandomCharacterID (int const ch, int const index) const {
-    // assert (index <4);
+    assert (("character index should be less than 4", index < 4));
     return randomCharacterIDs.at (4 * ch + index);
   }
   int Save::getRandomCityID (int const ch, int const index) const {
     if (ch == 0) {
-      // assert (index <4);
+      assert (("(ch1) city index should be less than 4", index < 4));
       return randomCitiesIDs.at (index);
     }
-    // assert (index <5);
+    assert (("city index should be less than 5", index < 5));
     return randomCitiesIDs.at (4 + 5 * (ch - 1) + index);
   }
   int Save::getRandomScenarioID (int const ch, int const index) const {
-    // assert (index <4);
+    assert (("scenario index should be less than 4", index < 4));
     return randomScenariosIDs.at (4 * ch + index);
   }
 
