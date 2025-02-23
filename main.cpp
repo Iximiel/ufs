@@ -718,8 +718,11 @@ public:
       playerdata.getSecondChapter (start).cityID =
         playerdata.getRandomCityID (chapter, chosenID);
       for (int i = 0; i < 2; i++) {
-        if (elitesChoice[i])
+        std::cerr << i << ":" << elitesChoice[i] << "->" << elitesChoiceIDs[i]
+                  << std::endl;
+        if (elitesChoice[i]) {
           playerdata.getSecondChapter (start).elitecharID = elitesChoiceIDs[i];
+        }
       }
     } else if constexpr (chapter == 2) {
       playerdata.getThirdChapter (start).charID =
@@ -730,7 +733,8 @@ public:
         playerdata.getRandomCityID (chapter, chosenID);
       int i = 0;
       for (i = 0; i < 4; i++) {
-        std::cerr << i << ":" << i << "->" << elitesChoiceIDs[i] << std::endl;
+        std::cerr << i << ":" << elitesChoice[i] << "->" << elitesChoiceIDs[i]
+                  << std::endl;
         if (elitesChoice[i]) {
           playerdata.getThirdChapter (start).elitecharID = elitesChoiceIDs[i];
           break;
@@ -738,8 +742,8 @@ public:
       }
       ++i;
       for (; i < 4; i++) {
-        std::cerr << i << ":" << i << "->" << elitesChoiceIDs[i] << std::endl;
-
+        std::cerr << i << ":" << elitesChoice[i] << "->" << elitesChoiceIDs[i]
+                  << std::endl;
         if (elitesChoice[i]) {
           playerdata.getThirdChapter (start).elitecharID2 = elitesChoiceIDs[i];
           break;
