@@ -20,8 +20,16 @@ namespace ufsct {
     int ID = -1;
 
   public:
-    validId () = default;
-    validId (std::integral auto id) : ID{static_cast<int> (id)} {}
+    validId ()                           = default;
+    validId (validId &&)                 = default;
+    validId (const validId &)            = default;
+    validId &operator= (validId &&)      = default;
+    validId &operator= (const validId &) = default;
+    validId (std::convertible_to<int> auto id) : ID{static_cast<int> (id)} {}
+    validId &operator= (std::convertible_to<int> auto id) {
+      ID = static_cast<int> (id);
+      return *this;
+    }
     operator int () const { return ID; }
     operator size_t () const {
       // this is bold
@@ -34,7 +42,10 @@ namespace ufsct {
       return static_cast<unsigned> (ID);
     }
     operator double () const { return static_cast<double> (ID); }
-    auto operator<=> (validId const &other) const { return ID <=> other.ID; };
+    // auto operator<=> (const validId &other) const { return ID <=> other.ID;
+    // };
+    bool operator== (const validId &other) const { return ID == other.ID; };
+    bool operator< (const validId &other) const { return ID < other.ID; };
     bool operator== (std::integral auto const &other) const {
       return ID == static_cast<int> (other);
     };
@@ -51,12 +62,12 @@ namespace ufsct {
     constexpr static int Fail      = -1;
     // The tries can have 3 states: NotFought, Fail, value difficulty in case of
     // victory
-    std::array<validId, 2> tries        = {NotFought, NotFought};
-    validId                cityID       = -1;
-    validId                charID       = -1;
-    validId                sceneID      = -1;
-    validId                elitecharID  = -1;
-    validId                elitecharID2 = -1;
+    std::array<int, 2> tries        = {NotFought, NotFought};
+    validId            cityID       = -1;
+    validId            charID       = -1;
+    validId            sceneID      = -1;
+    validId            elitecharID  = -1;
+    validId            elitecharID2 = -1;
   };
 
   // this is an experiment to use same data with different types, I do not know
@@ -83,12 +94,12 @@ namespace ufsct {
     std::array<chapter2, 2> secondChapter;
     std::array<chapter3, 2> thirdChapter;
     // std::array<chapter4, 2> fourthChapter;
-    std::array<int, 12> randomCharacterIDs;
-    std::array<int, 12> randomScenariosIDs;
-    std::array<int, 14> randomCitiesIDs;
-    std::array<int, 8>  lastBattle{-1, -1, -1, -1, -1, -1, -1, -1};
-    std::array<int, 3>  victoryTeam{-1, -1, -1};
-    int                 lastBattleScore{-1};
+    std::array<int, 12>    randomCharacterIDs;
+    std::array<int, 12>    randomScenariosIDs;
+    std::array<int, 14>    randomCitiesIDs;
+    std::array<validId, 8> lastBattle{-1, -1, -1, -1, -1, -1, -1, -1};
+    std::array<int, 3>     victoryTeam{-1, -1, -1};
+    int                    lastBattleScore{-1};
 
   public:
     Save ();
@@ -106,8 +117,8 @@ namespace ufsct {
 
     // this gets  generally chapter
     chapter3 getChapter (unsigned chapter, unsigned battle);
-    void
-    setTry (unsigned chapter, unsigned battle, int tryNumber, int difficulty);
+    void     setTry (
+          unsigned chapter, unsigned battle, unsigned tryNumber, int difficulty);
 
     const chapter1 &getFirstChapter (unsigned battle) const;
     const chapter2 &getSecondChapter (unsigned battle) const;
@@ -116,7 +127,8 @@ namespace ufsct {
     chapter2       &getSecondChapter (unsigned battle);
     chapter3       &getThirdChapter (unsigned battle);
 
-    int  getLastBattlePrepared () const;
+    int getLastBattlePrepared () const;
+    // input can be -1
     bool calculateBattle (int scenario) const;
 
     int getRandomCharacterID (unsigned ch, unsigned index) const;

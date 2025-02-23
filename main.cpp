@@ -47,9 +47,9 @@ class UnderFallingSkiesTracker {
                        tdata.tries[1] == ufsct::chapter1::Fail;
       if (!destroyed) {
         if (tdata.tries[0] == ufsct::chapter1::Fail) {
-          try2 = std::to_string (static_cast<int> (tdata.tries[1]));
+          try2 = std::to_string (tdata.tries[1]);
         } else {
-          try1 = std::to_string (static_cast<int> (tdata.tries[0]));
+          try1 = std::to_string (tdata.tries[0]);
           try2 = " ";
         }
       }
@@ -536,7 +536,7 @@ public:
     std::string charName     = campaign.getCharacter (tdata.charID);
     std::string scenarioName = campaign.getScenario (tdata.sceneID);
     std::string cityName     = campaign.getCity (tdata.cityID);
-    int         tryID = tdata.tries[0] == ufsct::chapter1::NotFought ? 0 : 1;
+    unsigned    tryID = tdata.tries[0] == ufsct::chapter1::NotFought ? 0 : 1;
     std::cerr << "chapter: " << chapter
               << " lastPreparedBattle: " << lastPreparedBattle << std::endl;
 

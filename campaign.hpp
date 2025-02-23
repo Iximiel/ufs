@@ -1,6 +1,7 @@
 #ifndef UFSCT_CAMPAIGN_H
 #define UFSCT_CAMPAIGN_H
 #include <array>
+#include <concepts>
 #include <string>
 #include <string_view>
 
@@ -25,6 +26,18 @@ namespace ufsct {
     std::string getCity (size_t i) const;
     std::string getScenario (size_t i) const;
     std::string getCharacter (size_t i) const;
+    std::string getCity (std::signed_integral auto i) const {
+      assert (i >= 0);
+      return getCity (static_cast<size_t> (i));
+    }
+    std::string getScenario (std::signed_integral auto i) const {
+      assert (i >= 0);
+      return getScenario (static_cast<size_t> (i));
+    }
+    std::string getCharacter (std::signed_integral auto i) const {
+      assert (i >= 0);
+      return getCharacter (static_cast<size_t> (i));
+    }
   };
 } // namespace ufsct
 #endif // UFSCT_CAMPAIGN_H

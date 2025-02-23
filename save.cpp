@@ -4,9 +4,11 @@
 #include "djson/json_write.hpp"
 
 #include <algorithm>
-#include <cassert>
 #include <fstream>
 #include <numeric>
+
+#include <cassert>
+#define assertm(exp, msg) assert ((void (msg), exp))
 
 #include <iostream>
 
@@ -41,7 +43,7 @@ namespace ufsct {
   }
 
   void Save::setTry (
-    unsigned chapter, unsigned battle, int tryNumber, int difficulty) {
+    unsigned chapter, unsigned battle, unsigned tryNumber, int difficulty) {
     switch (chapter) {
     case 0:
       firstChapter.at (battle).tries[tryNumber] = difficulty;
@@ -79,20 +81,20 @@ namespace ufsct {
 
   int Save::getRandomCharacterID (
     unsigned const ch, unsigned const index) const {
-    assert (("character index should be less than 4", index < 4));
+    assertm (index < 4, "character index should be less than 4");
     return randomCharacterIDs.at (4 * ch + index);
   }
   int Save::getRandomCityID (unsigned const ch, unsigned const index) const {
     if (ch == 0) {
-      assert (("(ch1) city index should be less than 4", index < 4));
+      assertm (index < 4, "(ch1) city index should be less than 4");
       return randomCitiesIDs.at (index);
     }
-    assert (("city index should be less than 5", index < 5));
+    assertm (index < 5, "city index should be less than 5");
     return randomCitiesIDs.at (4 + 5 * (ch - 1) + index);
   }
   int Save::getRandomScenarioID (
     unsigned const ch, unsigned const index) const {
-    assert (("scenario index should be less than 4", index < 4));
+    assertm (index < 4, "scenario index should be less than 4");
     return randomScenariosIDs.at (4 * ch + index);
   }
 
@@ -103,8 +105,8 @@ namespace ufsct {
     toret.charID   = chapter.get<djson::Number> ("charID");
     toret.sceneID  = chapter.get<djson::Number> ("sceneID");
     auto tries     = chapter.get<djson::Array> ("tries");
-    toret.tries[0] = tries.get<djson::Number> (0);
-    toret.tries[1] = tries.get<djson::Number> (1);
+    toret.tries[0] = static_cast<int> (tries.get<djson::Number> (0));
+    toret.tries[1] = static_cast<int> (tries.get<djson::Number> (1));
     if constexpr (std::is_same_v<T, chapter2>) {
       toret.elitecharID = chapter.get<djson::Number> ("elitecharID1");
     }
@@ -128,10 +130,13 @@ namespace ufsct {
     auto i_randomScenariosIDs =
       saveRead->get<djson::Array> ("randomScenariosIDs");
     for (size_t i = 0; i < 14; i++) {
-      randomCitiesIDs[i] = i_randomCitiesIDs.get<djson::Number> (i);
+      randomCitiesIDs[i] =
+        static_cast<int> (i_randomCitiesIDs.get<djson::Number> (i));
       if (i < 12) {
-        randomCharacterIDs[i] = i_randomCharacterIDs.get<djson::Number> (i);
-        randomScenariosIDs[i] = i_randomScenariosIDs.get<djson::Number> (i);
+        randomCharacterIDs[i] =
+          static_cast<int> (i_randomCharacterIDs.get<djson::Number> (i));
+        randomScenariosIDs[i] =
+          static_cast<int> (i_randomScenariosIDs.get<djson::Number> (i));
       }
     }
     auto history = saveRead->get<djson::Object> ("history");
@@ -160,13 +165,13 @@ namespace ufsct {
             std::find (k.begin (), k.end (), "team") != k.end ()) {
           auto theTeam = tmp.get<djson::Array> ("team");
           for (size_t i = 0; i < theTeam.size (); i++) {
-            victoryTeam[i] = theTeam.get<djson::Number> (i);
+            victoryTeam[i] = static_cast<int> (theTeam.get<djson::Number> (i));
           }
-          lastBattleScore = tmp.get<djson::Number> ("score");
+          lastBattleScore = static_cast<int> (tmp.get<djson::Number> ("score"));
         }
         auto tmp2 = tmp.get<djson::Array> ("cities");
         for (size_t i = 0; i < tmp2.size (); i++) {
-          lastBattle[i] = tmp2.get<djson::Number> (i);
+          lastBattle[i] = static_cast<int> (tmp2.get<djson::Number> (i));
         }
       }
     }
@@ -238,7 +243,7 @@ namespace ufsct {
         ch4["score"] = djson::Number (lastBattleScore);
       }
       djson::Array cities;
-      for (int i = 0; i < lastBattle.size (); ++i) {
+      for (unsigned i = 0; i < lastBattle.size (); ++i) {
         if (lastBattle[i] == -1) {
           break;
         }
@@ -256,7 +261,7 @@ namespace ufsct {
     export_randomCharacterIDs.resize (12);
     djson::Array export_randomScenariosIDs;
     export_randomScenariosIDs.resize (12);
-    for (int i = 0; i < 14; ++i) {
+    for (unsigned i = 0; i < 14; ++i) {
       export_randomCitiesIDs[i] = djson::Number (randomCitiesIDs[i]);
       if (i < 12) {
         export_randomCharacterIDs[i] = djson::Number (randomCharacterIDs[i]);
@@ -325,7 +330,7 @@ namespace ufsct {
     std::copy (citiesID.begin (), citiesID.end (), randomCitiesIDs.begin ());
     std::copy (charID.begin (), charID.end (), randomCharacterIDs.begin ());
     std::copy (sceneID.begin (), sceneID.end (), randomScenariosIDs.begin ());
-    for (int i = 0; i < 4; ++i) {
+    for (unsigned i = 0; i < 4; ++i) {
       std::cerr << randomCharacterIDs[i] << " ";
     }
     std::cerr << std::endl;
@@ -372,7 +377,7 @@ namespace ufsct {
     // find the "id" of the last prepared scenario by looking if the city has
     // been selected
     int currentBattle = -1;
-    for (int i = 0; i < 2; ++i) {
+    for (unsigned i = 0; i < 2; ++i) {
       if (firstChapter[i].cityID != -1) {
         ++currentBattle;
       }
@@ -385,7 +390,12 @@ namespace ufsct {
     }
     return currentBattle;
   }
-  bool Save::calculateBattle (int scenario) const {
+  bool Save::calculateBattle (int const scenario_index) const {
+    if (scenario_index < 0) {
+      return false;
+    }
+    unsigned const scenario = static_cast<unsigned> (scenario_index);
+
     // given a scenario, returns the last battle fought
     // a battle is fought if the first try has been fought
     // or if the second try has been fought after a failed first try
@@ -495,8 +505,8 @@ namespace ufsct {
     // we put the battles that have been fought first
     std::vector<int> citiesDone;
     citiesDone.reserve (8);
-    toret.score       = lastBattleScore;
-    int currentBattle = 0;
+    toret.score            = lastBattleScore;
+    unsigned currentBattle = 0;
     for (auto i = 0u; i < lastBattle.size (); i++) {
       if (lastBattle[i] == -1) {
         break;
@@ -539,7 +549,7 @@ namespace ufsct {
     // for each won battle
 
     // oop on the battles
-    for (int i = 0; i < 2; ++i) {
+    for (unsigned i = 0; i < 2; ++i) {
       // the first try is either a -1 or the difficulty
       toret.score += firstChapter[i].tries[0];
       toret.score += secondChapter[i].tries[0];

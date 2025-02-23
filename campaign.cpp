@@ -8,9 +8,9 @@ namespace ufsct {
 
   std::string campaingElement (
     const djson::Object &campaign,
-    int                  chapter,
+    size_t               chapter,
     std::string          category,
-    int                  index) {
+    size_t               index) {
     return std::get<djson::String> (
       std::get<djson::Object> (campaign.get<djson::Array> ("chapters")[chapter])
         .get<djson::Array> (category)[index]);
