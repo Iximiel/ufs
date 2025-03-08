@@ -1,0 +1,66 @@
+{
+    "chapters": [
+        {
+            "cities": [
+                "City A",
+                "City B",
+                "City C",
+                "City D"
+            ],
+            "scenarios": [
+                "Scenario    I",
+                "Scenario   II",
+                "Scenario  III",
+                "Scenario   IV"
+            ],
+            "characters": [
+                "Character  1",
+                "Character  2",
+                "Character  3",
+                "Character  4"
+            ]
+        },
+        {
+            "cities": [
+                "City E",
+                "City F",
+                "City G",
+                "City H",
+                "City I"
+            ],
+            "scenarios": [
+                "Scenario    V",
+                "Scenario   VI",
+                "Scenario  VII",
+                "Scenario VIII"
+            ],
+            "characters": [
+                "Character  5",
+                "Character  6",
+                "Character  7",
+                "Character  8"
+            ]
+        },
+        {
+            "cities": [
+                "City J",
+                "City K",
+                "City L",
+                "City M",
+                "City N"
+            ],
+            "scenarios": [
+                "Scenario   IX",
+                "Scenario    X",
+                "Scenario   XI",
+                "Scenario  XII"
+            ],
+            "characters": [
+                "Character  9",
+                "Character 10",
+                "Character 11",
+                "Character 12"
+            ]
+        }
+    ]
+}
