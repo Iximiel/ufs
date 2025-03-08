@@ -32,33 +32,33 @@ namespace ufsct {
     Save &operator= (const Save &);
     Save &operator= (Save &&);
     ~Save ();
-    bool        load (std::string_view);
-    bool        save (std::string_view);
-    std::string getCampaignName () const;
+    auto load (std::string_view) -> bool;
+    auto save (std::string_view) -> bool;
+    auto getCampaignName () const -> std::string;
 
-    std::array<validId, 8> getSurvivedCities () const;
+    auto getSurvivedCities () const -> std::array<validId, 8>;
 
-    chapter4Report getChapter4Results () const;
+    auto getChapter4Results () const -> chapter4Report;
 
     // this gets  generally chapter
-    chapter3 getChapter (unsigned chapter, unsigned battle);
-    void     setTry (
-          unsigned chapter, unsigned battle, unsigned tryNumber, int difficulty);
+    auto getChapter (unsigned chapter, unsigned battle) -> chapter3;
+    void setTry (
+      unsigned chapter, unsigned battle, unsigned tryNumber, int difficulty);
 
-    const chapter1 &getFirstChapter (unsigned battle) const;
-    const chapter2 &getSecondChapter (unsigned battle) const;
-    const chapter3 &getThirdChapter (unsigned battle) const;
-    chapter1       &getFirstChapter (unsigned battle);
-    chapter2       &getSecondChapter (unsigned battle);
-    chapter3       &getThirdChapter (unsigned battle);
+    auto getFirstChapter (unsigned battle) const -> const chapter1 &;
+    auto getSecondChapter (unsigned battle) const -> const chapter2 &;
+    auto getThirdChapter (unsigned battle) const -> const chapter3 &;
+    auto getFirstChapter (unsigned battle) -> chapter1 &;
+    auto getSecondChapter (unsigned battle) -> chapter2 &;
+    auto getThirdChapter (unsigned battle) -> chapter3 &;
 
-    int getLastBattlePrepared () const;
+    auto getLastBattlePrepared () const -> int;
     // input can be -1
-    bool calculateBattle (int scenario) const;
+    auto calculateBattle (int scenario) const -> bool;
 
-    int getRandomCharacterID (unsigned ch, unsigned index) const;
-    int getRandomCityID (unsigned ch, unsigned index) const;
-    int getRandomScenarioID (unsigned ch, unsigned index) const;
+    auto getRandomCharacterID (unsigned ch, unsigned index) const -> int;
+    auto getRandomCityID (unsigned ch, unsigned index) const -> int;
+    auto getRandomScenarioID (unsigned ch, unsigned index) const -> int;
     // a lazy way to write less code in the UI:
     template <unsigned chapter, unsigned cityDim>
     void setChapter (
@@ -90,7 +90,7 @@ namespace ufsct {
     std::vector<int> getPossibleElites (int chapter) const;
     void endCampaign (unsigned city, int score, std::array<int, 3> &team);
     void chapter4BattleLost (unsigned city);
-    bool lastBattleComplete () const;
+    auto lastBattleComplete () const -> bool;
   };
 
 } // namespace ufsct
