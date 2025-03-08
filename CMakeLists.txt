@@ -24,7 +24,12 @@ FetchContent_Declare(
   GIT_TAG v5.0.0)
 FetchContent_MakeAvailable(ftxui)
 
-add_executable(UFSCampaignTracker main.cpp utils.cpp campaign.cpp save.cpp)
+add_library(campaign campaign.cpp save.cpp chapters.cpp)
+target_link_libraries(campaign PRIVATE Djson::Djson)
+
+add_executable(UFSCampaignTracker main.cpp utils.cpp)
+
+target_link_libraries(UFSCampaignTracker PRIVATE campaign)
 
 # this is a 3.24 thing set_property(TARGET UFSCampaignTracker PROPERTY
 # COMPILE_WARNING_AS_ERROR ON)
@@ -62,6 +67,9 @@ target_link_libraries(
           #
           ftxui::screen ftxui::dom ftxui::component)
 
-add_executable(test test.cpp campaign.cpp save.cpp)
-target_link_libraries(test PRIVATE Djson::Djson ftxui::screen ftxui::dom
-                                   ftxui::component)
+add_executable(test test.cpp)
+target_link_libraries(
+  test
+  PRIVATE Djson::Djson #
+          ftxui::screen ftxui::dom ftxui::component #
+          campaign)
