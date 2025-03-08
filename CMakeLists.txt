@@ -62,6 +62,6 @@ target_link_libraries(
           #
           ftxui::screen ftxui::dom ftxui::component)
 
-add_executable(test test.cpp campaign.cpp save.cpp)
+add_executable(test test.cpp campaign.cpp save.cpp chapters.cpp)
 target_link_libraries(test PRIVATE Djson::Djson ftxui::screen ftxui::dom
                                    ftxui::component)
