@@ -3,6 +3,7 @@
 #include <array>
 #include <cassert>
 #include <iosfwd>
+#include <span>
 
 namespace ufsct {
 
@@ -47,6 +48,7 @@ namespace ufsct {
     bool operator!= (std::integral auto const &other) const {
       return ID != static_cast<int> (other);
     };
+    operator bool () const { return ID >= 0; }
     friend std::ostream &operator<< (std::ostream &os, validId const &id);
   };
 
@@ -70,6 +72,11 @@ namespace ufsct {
   struct chapter2 : public chapter1 {};
 
   struct chapter3 : public chapter1 {};
+
+  // given the list of tries, returns the last battle fought
+  // a battle is fought if the first try has been fought
+  // or if the second try has been fought after a failed first try
+  auto battleComplete (std::span<const int, 2> tries) -> bool;
 
   /// @brief a return type for the status of the battle, used in determining if
   /// build the new scenario or display the battle screen

@@ -364,14 +364,8 @@ namespace ufsct {
   /// @return
   int Save::getLastBattlePrepared () const {
     if (
-      lastBattle[0] != -1 ||
-      (thirdChapter[1].cityID != -1 &&
-       ( // won at first try
-         (thirdChapter[1].tries[0] != chapter1::NotFought &&
-          thirdChapter[1].tries[0] != chapter1::Fail) ||
-         // any outcome for second try
-         (thirdChapter[1].tries[0] != chapter1::NotFought &&
-          thirdChapter[1].tries[1] == chapter1::Fail)))) {
+      lastBattle[0] != -1 || (thirdChapter[1].cityID != -1 &&
+                              battleComplete (thirdChapter[1].tries))) {
       return 6;
     }
     // find the "id" of the last prepared scenario by looking if the city has
@@ -399,13 +393,7 @@ namespace ufsct {
     // given a scenario, returns the last battle fought
     // a battle is fought if the first try has been fought
     // or if the second try has been fought after a failed first try
-    auto battleComplete = [] (std::array<int, 2> tries) -> bool {
-      return ( // first failed, any result in the second
-        (tries[0] == chapter1::Fail && tries[1] != chapter1::NotFought) ||
-        // Second not fought , success on the first
-        (tries[1] == chapter1::NotFought &&
-         (tries[0] != chapter1::Fail && tries[0] != chapter1::NotFought)));
-    };
+
     switch (scenario) {
     case 0:
       [[fallthrough]];
