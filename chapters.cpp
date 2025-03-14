@@ -21,7 +21,7 @@ namespace ufsct {
        (tries[0] != chapter1::Fail && tries[0] != chapter1::NotFought)));
   };
 
-  std::ostream &operator<< (std::ostream &os, validId const &id) {
+  auto operator<< (std::ostream &os, validId const &id) -> std::ostream & {
     return os << id.ID;
   }
 } // namespace ufsct

@@ -557,4 +557,24 @@ namespace ufsct {
     return toret;
   }
 
+  auto Save::getBattleResult (unsigned chapter, unsigned battle) const
+    -> std::optional<battleResult> {
+    switch (chapter) {
+    case 0:
+      return battleResult (firstChapter.at (battle));
+      break;
+    case 1:
+      return battleResult (secondChapter.at (battle));
+      break;
+    case 2:
+      return battleResult (thirdChapter.at (battle));
+      break;
+    default:
+      std::cerr << __FUNCTION__ << ": please speacify chapter 0, 1 or 2"
+                << std::endl;
+      return std::nullopt;
+      break;
+    }
+  }
+
 } // namespace ufsct

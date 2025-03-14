@@ -4,6 +4,7 @@
 #include <cassert>
 #include <concepts>
 #include <iosfwd>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -59,6 +60,10 @@ namespace ufsct {
     auto getRandomCharacterID (unsigned ch, unsigned index) const -> int;
     auto getRandomCityID (unsigned ch, unsigned index) const -> int;
     auto getRandomScenarioID (unsigned ch, unsigned index) const -> int;
+
+    auto getBattleResult (unsigned chapter, unsigned battle) const
+      -> std::optional<battleResult>;
+
     // a lazy way to write less code in the UI:
     template <unsigned chapter, unsigned cityDim>
     void setChapter (
