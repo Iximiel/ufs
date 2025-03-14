@@ -6,6 +6,7 @@
 #include <cassert>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <random>
 #include <string>
 #include <vector>
@@ -302,46 +303,43 @@ public:
   }
   navigation battleMenu (ftxui::ScreenInteractive &screen) {
     std::cerr << "battleMenu" << std::endl;
+    if (auto ch = prepareOrReportBattle<0> (screen); ch.has_value ()) {
+      return ch.value ();
+    }
+    if (auto ch = prepareOrReportBattle<1> (screen); ch.has_value ()) {
+      return ch.value ();
+    }
+    if (auto ch = prepareOrReportBattle<2> (screen); ch.has_value ()) {
+      return ch.value ();
+    }
     if (playerdata.lastBattleComplete ()) {
       return summaryMenu (screen);
+    } else {
+      return finalBattle (screen);
     }
-    // determine which battle have been prepared
-    int lastPreparedBattle = playerdata.getLastBattlePrepared ();
-    std::cerr << "lastPreparedBattle: " << lastPreparedBattle << std::endl;
-    // determine if the last battle has been fought
-    bool lastPreparedBattleCompleted =
-      playerdata.calculateBattle (lastPreparedBattle);
-    std::cerr << "lastPreparedBattleFought: "
-              << (lastPreparedBattleCompleted ? "true" : "false") << std::endl;
-    if (
-      !lastPreparedBattleCompleted && lastPreparedBattle >= 0 &&
-      lastPreparedBattle < 5) {
-      // this means that we have the data
-      std::cerr << "we have the data" << std::endl;
-      return battleScoreMenu (screen);
-    }
-    if (lastPreparedBattleCompleted) {
-      // increment to go to the next round
-      lastPreparedBattle++;
-    }
-    if (lastPreparedBattle < 2) { // 0 1
-      return battleChapterMenu<0> (screen);
-    }
-    if (lastPreparedBattle < 4) { // 2 6
-      if (!lastPreparedBattleCompleted) {
-        return battleScoreMenu (screen);
-      }
-      return battleChapterMenu<1> (screen);
-    }
-    if (lastPreparedBattle < 6) { // 4 5
-      if (!lastPreparedBattleCompleted) {
-        return battleScoreMenu (screen);
-      }
-      return battleChapterMenu<2> (screen);
-    }
-    return finalBattle (screen);
+
+    return navigation::ufsMain;
   }
 
+  template <unsigned chapter>
+  auto prepareOrReportBattle (ftxui::ScreenInteractive &screen)
+    -> std::optional<navigation> {
+    // method to repeat less code possible
+    std::cerr << "prepareOrReportBattle" << std::endl;
+    for (unsigned i = 0; i < 2; i++) {
+      const auto bt = playerdata.getBattleResult (chapter, i);
+      if (bt.has_value ()) {
+        const auto t = bt.value ();
+        if (!t.prepared) {
+          return battleChapterMenu<chapter> (i, screen);
+        }
+        if (!t.complete) {
+          return battleScoreMenu (chapter, i, screen);
+        }
+      }
+    }
+    return std::nullopt;
+  }
   navigation summaryMenu (ftxui::ScreenInteractive &screen) {
     std::cerr << "summaryMenu" << std::endl;
     using namespace ftxui;
@@ -505,7 +503,10 @@ public:
     return navigation::ufsBattle;
   }
 
-  navigation battleScoreMenu (ftxui::ScreenInteractive &screen) {
+  navigation battleScoreMenu (
+    const unsigned            chapter,
+    const unsigned            battle,
+    ftxui::ScreenInteractive &screen) {
     using namespace ftxui;
     std::cerr << "battleScoreMenu" << std::endl;
     bool goBack     = false;
@@ -525,20 +526,13 @@ public:
       next = true;
       close ();
     });
-    // determine which battle have been prepared
-    unsigned lastPreparedBattle =
-      static_cast<unsigned> (playerdata.getLastBattlePrepared ());
-    std::cerr << "lastPreparedBattle: " << lastPreparedBattle << std::endl;
-    // determine if the last battle has been fought
-    unsigned chapter = lastPreparedBattle / 2;
+
     std::cerr << "chapter: " << chapter << std::endl;
-    auto        tdata = playerdata.getChapter (chapter, lastPreparedBattle % 2);
+    auto        tdata        = playerdata.getChapter (chapter, battle);
     std::string charName     = campaign.getCharacter (tdata.charID);
     std::string scenarioName = campaign.getScenario (tdata.sceneID);
     std::string cityName     = campaign.getCity (tdata.cityID);
     unsigned    tryID = tdata.tries[0] == ufsct::chapter1::NotFought ? 0 : 1;
-    std::cerr << "chapter: " << chapter
-              << " lastPreparedBattle: " << lastPreparedBattle << std::endl;
 
     std::string battlescore = "0";
 
@@ -578,15 +572,23 @@ public:
       }
       // check wich battle needs to be fought
 
-      playerdata.setTry (chapter, lastPreparedBattle % 2, tryID, difficulty);
+      playerdata.setTry (chapter, battle, tryID, difficulty);
       playerdata.save (file);
       return navigation::ufsBattle;
     }
     return navigation::ufsBattle;
   }
 
+  // dispay the battle chapter menu to setup the data and and display the
+  // choiches between the two random loadout for the battle
+  // - the template parameter decides the chapter and slighly change some of the
+  // behaviours here I am using a template beacuse I am lazy and I do not want
+  // to write "explicit" if statements. And because some behaviour for the ui
+  // are slightly different, but the overall logitic is the same
+  // - battleid is 0 or 1
   template <unsigned chapter>
-  navigation battleChapterMenu (ftxui::ScreenInteractive &screen) {
+  navigation battleChapterMenu (
+    unsigned const battleid, ftxui::ScreenInteractive &screen) {
     using namespace ftxui;
     std::cerr << "battleChapter" << chapter + 1 << "Menu" << std::endl;
     bool goBack = false;
@@ -597,14 +599,14 @@ public:
       goBack = true;
       close ();
     });
-    unsigned start      = 0;
-    if (playerdata.getChapter (chapter, 0).charID != -1) {
-      start = 2;
+    unsigned start      = battleid * 2;
+    if (start == 2) {
       std::cerr << "second battle" << std::endl;
     }
     int selectionID = -1;
 
     if (start == 0) {
+      // is the first battle, we set the randomness for the chapter
       constexpr int      base   = 4 * chapter;
       std::array<int, 4> charID = {base, 1 + base, 2 + base, 3 + base};
       std::shuffle (charID.begin (), charID.end (), rng);
