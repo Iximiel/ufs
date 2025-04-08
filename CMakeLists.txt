@@ -35,30 +35,34 @@ target_link_libraries(UFSCampaignTracker PRIVATE campaign)
 # COMPILE_WARNING_AS_ERROR ON)
 if(MSVC)
   target_compile_options(UFSCampaignTracker PRIVATE /W4 /WX)
+  target_compile_options(campaign PRIVATE /W4 /WX)
 else()
-  target_compile_options(
-    UFSCampaignTracker
-    PRIVATE -Wall
-            -Wextra
-            -Wshadow
-            -Wnon-virtual-dtor
-            -Wold-style-cast
-            -Wcast-align
-            -Wunused
-            -Woverloaded-virtual
-            -Wpedantic
-            -Wconversion
-            -Wsign-conversion
-            -Wnull-dereference
-            -Wdouble-promotion
-            -Wformat=2
-            -Wduplicated-cond
-            -Wduplicated-branches
-            -Wlogical-op
-            -Wuseless-cast
-            -Werror
-            # -Wlifetime
+  set(WARNINGS
+      -Werror
+      -Wall
+      -Wextra
+      -Wshadow
+      -Wnon-virtual-dtor
+      -Wold-style-cast
+      -Wcast-align
+      -Wunused
+      -Woverloaded-virtual
+      -Wpedantic
+      -Wconversion
+      -Wsign-conversion
+      -Wnull-dereference
+      -Wdouble-promotion
+      -Wformat=2
+      -Wduplicated-cond
+      -Wduplicated-branches
+      -Wlogical-op
+      -Wuseless-cast
+      # -Wlifetime
   )
+
+  target_compile_options(UFSCampaignTracker PRIVATE ${WARNINGS})
+
+  target_compile_options(campaign PRIVATE ${WARNINGS})
 endif()
 
 target_link_libraries(
