@@ -358,62 +358,6 @@ namespace ufsct {
       sceneID.begin (), sceneID.end (), randomScenariosIDs.begin () + 8);
   }
 
-  /// @brief  the ide of the last battle with stored settings:
-  ///
-  /// -1 is empty campaing, 6 is final battle
-  /// @return
-  int Save::getLastBattlePrepared () const {
-    if (
-      lastBattle[0] != -1 || (thirdChapter[1].cityID != -1 &&
-                              battleComplete (thirdChapter[1].tries))) {
-      return 6;
-    }
-    // find the "id" of the last prepared scenario by looking if the city has
-    // been selected
-    int currentBattle = -1;
-    for (unsigned i = 0; i < 2; ++i) {
-      if (firstChapter[i].cityID != -1) {
-        ++currentBattle;
-      }
-      if (secondChapter[i].cityID != -1) {
-        ++currentBattle;
-      }
-      if (thirdChapter[i].cityID != -1) {
-        ++currentBattle;
-      }
-    }
-    return currentBattle;
-  }
-  bool Save::calculateBattle (int const scenario_index) const {
-    if (scenario_index < 0) {
-      return false;
-    }
-    unsigned const scenario = static_cast<unsigned> (scenario_index);
-
-    // given a scenario, returns the last battle fought
-    // a battle is fought if the first try has been fought
-    // or if the second try has been fought after a failed first try
-
-    switch (scenario) {
-    case 0:
-      [[fallthrough]];
-    case 1:
-      return battleComplete (firstChapter[scenario].tries);
-      break;
-    case 2:
-      [[fallthrough]];
-    case 3:
-      return battleComplete (secondChapter[scenario - 2].tries);
-      break;
-    case 4:
-      [[fallthrough]];
-    case 5:
-      return battleComplete (thirdChapter[scenario - 4].tries);
-      break;
-    default:
-      return false;
-    }
-  }
   std::vector<int> Save::getPossibleElites (int chapter) const {
     std::vector<int> toret;
     if (chapter == 0) {

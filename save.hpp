@@ -19,13 +19,14 @@ namespace ufsct {
     std::array<chapter1, 2> firstChapter;
     std::array<chapter2, 2> secondChapter;
     std::array<chapter3, 2> thirdChapter;
-    // std::array<chapter4, 2> fourthChapter;
-    std::array<int, 12>    randomCharacterIDs;
-    std::array<int, 12>    randomScenariosIDs;
-    std::array<int, 14>    randomCitiesIDs;
+
     std::array<validId, 8> lastBattle{-1, -1, -1, -1, -1, -1, -1, -1};
     std::array<int, 3>     victoryTeam{-1, -1, -1};
     int                    lastBattleScore{-1};
+
+    std::array<int, 12> randomCharacterIDs;
+    std::array<int, 12> randomScenariosIDs;
+    std::array<int, 14> randomCitiesIDs;
 
   public:
     Save ();
@@ -53,16 +54,12 @@ namespace ufsct {
     auto getSecondChapter (unsigned battle) -> chapter2 &;
     auto getThirdChapter (unsigned battle) -> chapter3 &;
 
-    auto getLastBattlePrepared () const -> int;
-    // input can be -1
-    auto calculateBattle (int scenario) const -> bool;
+    auto getBattleResult (unsigned chapter, unsigned battle) const
+      -> std::optional<battleResult>;
 
     auto getRandomCharacterID (unsigned ch, unsigned index) const -> int;
     auto getRandomCityID (unsigned ch, unsigned index) const -> int;
     auto getRandomScenarioID (unsigned ch, unsigned index) const -> int;
-
-    auto getBattleResult (unsigned chapter, unsigned battle) const
-      -> std::optional<battleResult>;
 
     // a lazy way to write less code in the UI:
     template <unsigned chapter, unsigned cityDim>
